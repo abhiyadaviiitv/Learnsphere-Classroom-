@@ -1,0 +1,9 @@
+com/learnsphere/submission/dto/Attachment.class
+com/learnsphere/submission/service/SubmissionService.class
+com/learnsphere/submission/controller/SubmissionController.class
+com/learnsphere/submission/model/Submission.class
+com/learnsphere/submission/dto/SubmissionMapper.class
+com/learnsphere/submission/repository/SubmissionRepository.class
+com/learnsphere/submission/dto/Submissiondto.class
+com/learnsphere/submission/SubmissionServiceApplication.class
+com/learnsphere/submission/service/FileStorageService.class

@@ -9,10 +9,12 @@ import {
     Link as LinkIcon,
     MoreVertical,
     LogOut,
-    GraduationCap
+    GraduationCap,
+    Bell
 } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import * as Popover from '@radix-ui/react-popover';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 
@@ -23,6 +25,9 @@ function StudentDashboard() {
     const [classCode, setClassCode] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
+    const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0);
+    const [unreadAnnouncements, setUnreadAnnouncements] = useState([]);
+    const [notificationsOpen, setNotificationsOpen] = useState(false);
 
     const navigate = useNavigate();
     const id = localStorage.getItem('id');
@@ -39,6 +44,64 @@ function StudentDashboard() {
             fetchEnrolledClasses();
         }
     }, [user]);
+
+    // Fetch unread announcements
+    useEffect(() => {
+        const fetchUnreadAnnouncements = async () => {
+            if (!id || enrolledClasses.length === 0) return;
+            
+            try {
+                const classIds = enrolledClasses.map(cls => cls.id);
+                const [countResponse, listResponse] = await Promise.all([
+                    axios.post(
+                        `http://localhost:8080/api/notifications/student/${id}/unread/count`,
+                        classIds,
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    ),
+                    axios.post(
+                        `http://localhost:8080/api/notifications/student/${id}/unread`,
+                        classIds,
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    )
+                ]);
+                setUnreadAnnouncementsCount(countResponse.data.count || 0);
+                setUnreadAnnouncements(listResponse.data || []);
+            } catch (err) {
+                console.error('Error fetching unread announcements:', err);
+            }
+        };
+
+        if (id && enrolledClasses.length > 0) {
+            fetchUnreadAnnouncements();
+            // Refresh every 30 seconds
+            const interval = setInterval(fetchUnreadAnnouncements, 30000);
+            return () => clearInterval(interval);
+        }
+    }, [id, token, enrolledClasses]);
+
+    // Handle notification click - mark as read and navigate to class
+    const handleNotificationClick = async (notification) => {
+        try {
+            // Mark as read
+            await axios.put(
+                `http://localhost:8080/api/notifications/${notification.id}/read/${id}`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            // Update local state
+            setUnreadAnnouncements(prev => prev.filter(n => n.id !== notification.id));
+            setUnreadAnnouncementsCount(prev => Math.max(0, prev - 1));
+            setNotificationsOpen(false);
+            
+            // Navigate to class page
+            navigate(`/class/${notification.classId}`);
+        } catch (err) {
+            console.error('Error marking notification as read:', err);
+            // Still navigate even if marking as read fails
+            navigate(`/class/${notification.classId}`);
+        }
+    };
 
     const getInitials = (name) => {
         if (!name) return '';
@@ -149,60 +212,134 @@ function StudentDashboard() {
                         <p className="text-gray-600 mt-1">Access your courses and assignments</p>
                     </div>
 
-                    <Dialog.Root open={openJoinDialog} onOpenChange={setOpenJoinDialog}>
-                        <Dialog.Trigger asChild>
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="btn-primary flex items-center gap-2"
-                            >
-                                <Plus className="w-5 h-5" />
-                                Join Class
-                            </motion.button>
-                        </Dialog.Trigger>
-                        <Dialog.Portal>
-                            <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-                            <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl p-6 w-full max-w-md z-50">
-                                <Dialog.Title className="text-xl font-bold text-gray-900 mb-4">
-                                    Join a Class
-                                </Dialog.Title>
-                                <form onSubmit={handleJoinClass} className="space-y-4">
-                                    <p className="text-sm text-gray-600">
-                                        Ask your teacher for the class code, then enter it here.
-                                    </p>
-                                    <div>
-                                        <input
-                                            type="text"
-                                            value={classCode}
-                                            onChange={(e) => setClassCode(e.target.value)}
-                                            placeholder="Class Code"
-                                            className="input-field w-full"
-                                            required
-                                        />
-                                        {error && (
-                                            <p className="text-sm text-error-600 mt-2">{error}</p>
+                    <div className="flex items-center gap-4">
+                        {/* Notifications Icon with Dropdown */}
+                        <Popover.Root open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+                            <Popover.Trigger asChild>
+                                <button
+                                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
+                                    title="Announcements"
+                                >
+                                    <Bell className="w-6 h-6 text-gray-700" />
+                                    {unreadAnnouncementsCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-error-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                            {unreadAnnouncementsCount > 9 ? '9+' : unreadAnnouncementsCount}
+                                        </span>
+                                    )}
+                                </button>
+                            </Popover.Trigger>
+                            <Popover.Portal>
+                                <Popover.Content
+                                    className="bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-80 max-h-96 overflow-y-auto z-50"
+                                    sideOffset={5}
+                                >
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="font-semibold text-gray-900">Announcements</h3>
+                                        {unreadAnnouncementsCount > 0 && (
+                                            <span className="bg-error-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                                                {unreadAnnouncementsCount} new
+                                            </span>
                                         )}
                                     </div>
-                                    <div className="flex justify-end gap-3 pt-4">
-                                        <button
-                                            type="button"
-                                            onClick={() => setOpenJoinDialog(false)}
-                                            className="btn-ghost"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={!classCode}
-                                            className="btn-primary"
-                                        >
-                                            Join
-                                        </button>
-                                    </div>
-                                </form>
-                            </Dialog.Content>
-                        </Dialog.Portal>
-                    </Dialog.Root>
+                                    {unreadAnnouncements.length === 0 ? (
+                                        <div className="text-center py-8 text-gray-500 text-sm">
+                                            No new announcements
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {unreadAnnouncements.map((notification) => {
+                                                const classData = enrolledClasses.find(c => c.id === notification.classId);
+                                                return (
+                                                    <button
+                                                        key={notification.id}
+                                                        onClick={() => handleNotificationClick(notification)}
+                                                        className="w-full text-left p-3 rounded-lg hover:bg-gray-50 border border-gray-100 transition-colors"
+                                                    >
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-xs text-gray-500 mb-1">
+                                                                    {classData?.name || 'Class'}
+                                                                </p>
+                                                                <h4 className="font-semibold text-sm text-gray-900 truncate mb-1">
+                                                                    {notification.title}
+                                                                </h4>
+                                                                <p className="text-xs text-gray-600 line-clamp-2">
+                                                                    {notification.message}
+                                                                </p>
+                                                                <p className="text-xs text-gray-400 mt-1">
+                                                                    {new Date(notification.createdAt).toLocaleString()}
+                                                                </p>
+                                                            </div>
+                                                            {notification.priority === 'high' && (
+                                                                <span className="bg-error-100 text-error-700 text-xs px-2 py-0.5 rounded-full flex-shrink-0">
+                                                                    High
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </Popover.Content>
+                            </Popover.Portal>
+                        </Popover.Root>
+
+                        <Dialog.Root open={openJoinDialog} onOpenChange={setOpenJoinDialog}>
+                            <Dialog.Trigger asChild>
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="btn-primary flex items-center gap-2"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                    Join Class
+                                </motion.button>
+                            </Dialog.Trigger>
+                            <Dialog.Portal>
+                                <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
+                                <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl p-6 w-full max-w-md z-50">
+                                    <Dialog.Title className="text-xl font-bold text-gray-900 mb-4">
+                                        Join a Class
+                                    </Dialog.Title>
+                                    <form onSubmit={handleJoinClass} className="space-y-4">
+                                        <p className="text-sm text-gray-600">
+                                            Ask your teacher for the class code, then enter it here.
+                                        </p>
+                                        <div>
+                                            <input
+                                                type="text"
+                                                value={classCode}
+                                                onChange={(e) => setClassCode(e.target.value)}
+                                                placeholder="Class Code"
+                                                className="input-field w-full"
+                                                required
+                                            />
+                                            {error && (
+                                                <p className="text-sm text-error-600 mt-2">{error}</p>
+                                            )}
+                                        </div>
+                                        <div className="flex justify-end gap-3 pt-4">
+                                            <button
+                                                type="button"
+                                                onClick={() => setOpenJoinDialog(false)}
+                                                className="btn-ghost"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                disabled={!classCode}
+                                                className="btn-primary"
+                                            >
+                                                Join
+                                            </button>
+                                        </div>
+                                    </form>
+                                </Dialog.Content>
+                            </Dialog.Portal>
+                        </Dialog.Root>
+                    </div>
                 </div>
 
                 {/* Grid */}

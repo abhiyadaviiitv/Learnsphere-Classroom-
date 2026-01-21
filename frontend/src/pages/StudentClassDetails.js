@@ -87,12 +87,12 @@ function StudentClassDetails() {
     stompClient.onConnect = () => {
       console.log('WebSocket connected');
       setWsConnected(true);
-      
+
       // Subscribe to meeting updates for this class
       stompClient.subscribe(`/topic/class/${classId}/meeting`, (message) => {
         const event = JSON.parse(message.body);
         console.log('Meeting event received:', event);
-        
+
         if (event.type === 'MEETING_STARTED') {
           setMeetingStatus({
             isLive: true,
@@ -173,17 +173,17 @@ function StudentClassDetails() {
           headers: { Authorization: `Bearer ${token}` }
         });
         const allAssignments = response.data || [];
-        
+
         // Sort by due date (ascending - earliest first), then take last 2 (most recent)
         const sortedAssignments = [...allAssignments].sort((a, b) => {
           const dateA = new Date(a.dueDate);
           const dateB = new Date(b.dueDate);
           return dateA - dateB; // Ascending order
         });
-        
+
         // Take last 2 assignments (closest due dates)
         const lastTwoAssignments = sortedAssignments.slice(-2);
-        
+
         // Fetch submission count and student submission for each assignment
         const assignmentsWithSubmissions = await Promise.all(
           lastTwoAssignments.map(async (assignment) => {
@@ -195,7 +195,7 @@ function StudentClassDetails() {
               );
               const submissions = submissionsResponse.data || [];
               const submissionCount = Array.isArray(submissions) ? submissions.length : 0;
-              
+
               // Fetch student's own submission (if exists) to check if it's late
               let studentSubmission = null;
               let isLate = false;
@@ -219,7 +219,7 @@ function StudentClassDetails() {
                   console.error(`Error fetching student submission for assignment ${assignment.id}:`, err);
                 }
               }
-              
+
               return {
                 ...assignment,
                 submissionCount: submissionCount,
@@ -237,7 +237,7 @@ function StudentClassDetails() {
             }
           })
         );
-        
+
         setRecentAssignments(assignmentsWithSubmissions);
       } catch (err) {
         console.error('Error fetching assignments:', err);
@@ -305,7 +305,7 @@ function StudentClassDetails() {
       // IMPORTANT: SSO endpoint is on Connective BACKEND (port 4000), not frontend
       const connectiveBackendUrl = process.env.REACT_APP_CONNECTIVE_BACKEND_URL || 'https://localhost:4000';
       const ssoUrl = `${connectiveBackendUrl}/auth/sso/learnsphere?token=${encodeURIComponent(tokenResponse.data.token)}&roomId=${encodeURIComponent(meetingStatus.roomId)}&isHost=false&returnUrl=/room/${encodeURIComponent(meetingStatus.roomId)}`;
-      
+
       console.log('Redirecting student to Connective SSO endpoint:', ssoUrl);
       console.log('Connective backend URL:', connectiveBackendUrl);
       window.location.href = ssoUrl;
@@ -582,12 +582,12 @@ function StudentClassDetails() {
               </div>
             </div>
 
-            {/* Notifications - Teacher Only */}
+            {/* Announcements */}
             <div className="card overflow-hidden">
               <div className="bg-gradient-to-r from-warning-500 to-warning-600 p-4 flex items-center justify-between">
                 <h2 className="text-xl font-display font-bold text-white flex items-center gap-2">
                   <Bell className="w-5 h-5" />
-                  Class Notifications
+                  Class Announcements
                 </h2>
                 {unreadNotifications > 0 && (
                   <span className="bg-white text-warning-600 text-xs font-bold px-2 py-1 rounded-full">
@@ -599,34 +599,64 @@ function StudentClassDetails() {
                 <div className="max-h-80 overflow-y-auto space-y-2">
                   {notifications.length === 0 ? (
                     <div className="p-4 text-center text-gray-500 text-sm">
-                      No notifications yet
+                      No announcements yet
                     </div>
                   ) : (
-                    notifications.map((notification) => (
-                      <motion.div
-                        key={notification.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="p-3 rounded-lg bg-gray-50 border border-gray-100"
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <div className="flex items-center gap-2 flex-1">
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-sm text-gray-900 truncate">
-                                {notification.title}
-                              </h4>
-                              {notification.priority === 'high' && (
-                                <span className="inline-block px-2 py-0.5 bg-error-100 text-error-700 text-xs rounded-full mt-1">
-                                  High Priority
-                                </span>
+                    notifications.map((notification) => {
+                      const isUnread = !notification.readBy?.includes(studentId);
+                      return (
+                        <div
+                          key={notification.id}
+                          className={`p-3 rounded-lg border transition-colors cursor-pointer ${isUnread
+                              ? 'bg-primary-50 border-primary-200 hover:bg-primary-100'
+                              : 'bg-gray-50 border-gray-100 hover:bg-gray-100'
+                            }`}
+                          onClick={async () => {
+                            console.log("Notification clicked", notification.id);
+                            if (isUnread) {
+                              try {
+                                console.log("Marking as read...");
+                                await axios.put(
+                                  `http://localhost:8080/api/notifications/${notification.id}/read/${studentId}`,
+                                  {},
+                                  { headers: { Authorization: `Bearer ${token}` } }
+                                );
+                                console.log("Marked as read, refreshing...");
+                                // Refresh notifications to update read status
+                                const response = await axios.get(`http://localhost:8080/api/notifications/class/${classId}`, {
+                                  headers: { Authorization: `Bearer ${token}` }
+                                });
+                                setNotifications(response.data || []);
+                              } catch (err) {
+                                console.error('Error marking notification as read:', err);
+                              }
+                            } else {
+                              console.log("Notification already read");
+                            }
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-2 flex-1">
+                              {isUnread && (
+                                <div className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0 mt-1" />
                               )}
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-sm text-gray-900 truncate">
+                                  {notification.title}
+                                </h4>
+                                {notification.priority === 'high' && (
+                                  <span className="inline-block px-2 py-0.5 bg-error-100 text-error-700 text-xs rounded-full mt-1">
+                                    High Priority
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
+                          <p className="text-xs text-gray-700 mb-2 line-clamp-2">{notification.message}</p>
+                          <p className="text-xs text-gray-500">{new Date(notification.createdAt).toLocaleString()}</p>
                         </div>
-                        <p className="text-xs text-gray-700 mb-2 line-clamp-2">{notification.message}</p>
-                        <p className="text-xs text-gray-500">{new Date(notification.createdAt).toLocaleString()}</p>
-                      </motion.div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -660,11 +690,10 @@ function StudentClassDetails() {
                   whileTap={{ scale: meetingStatus.isLive ? 0.95 : 1 }}
                   onClick={handleJoinMeeting}
                   disabled={!meetingStatus.isLive}
-                  className={`flex items-center gap-2 ${
-                    meetingStatus.isLive
-                      ? 'btn-primary'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
+                  className={`flex items-center gap-2 ${meetingStatus.isLive
+                    ? 'btn-primary'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
                 >
                   <Video className="w-5 h-5" />
                   {meetingStatus.isLive ? 'Join Meeting' : 'Meeting Not Active'}
@@ -785,9 +814,8 @@ function StudentClassDetails() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 * index }}
                         whileHover={{ y: -2 }}
-                        className={`card p-5 hover:shadow-lg transition-shadow cursor-pointer ${
-                          assignment.isLate ? 'border-2 border-error-300 bg-error-50' : ''
-                        }`}
+                        className={`card p-5 hover:shadow-lg transition-shadow cursor-pointer ${assignment.isLate ? 'border-2 border-error-300 bg-error-50' : ''
+                          }`}
                         onClick={() => navigate(`/assignment/${assignment.id}`)}
                       >
                         <div className="flex items-start justify-between mb-4">

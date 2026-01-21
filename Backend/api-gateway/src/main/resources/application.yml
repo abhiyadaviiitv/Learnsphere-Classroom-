@@ -1,0 +1,151 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # User Service Routes (including OAuth2)
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**,/api/auth/**,/api/profile/**,/api/update-role,/api/update
+          filters:
+            - StripPrefix=0
+        
+        # OAuth2 Routes (separate route for OAuth endpoints)
+        - id: user-service-oauth
+          uri: lb://user-service
+          predicates:
+            - Path=/oauth2/**
+          filters:
+            - StripPrefix=0
+        
+        # Class Service Routes
+        - id: class-service
+          uri: lb://class-service
+          predicates:
+            - Path=/api/classes/**
+          filters:
+            - StripPrefix=0
+        
+        # Assignment Service Routes
+        - id: assignment-service
+          uri: lb://assignment-service
+          predicates:
+            - Path=/api/assignments/**
+          filters:
+            - StripPrefix=0
+        
+        # Submission Service Routes
+        - id: submission-service
+          uri: lb://submission-service
+          predicates:
+            - Path=/api/submissions/**
+          filters:
+            - StripPrefix=0
+        
+        # Analytics Service Routes
+        - id: analytics-service
+          uri: lb://analytics-service
+          predicates:
+            - Path=/api/analytics/**
+          filters:
+            - StripPrefix=0
+        
+        # Notification Service Routes
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=0
+        
+        # File Service Routes
+        - id: file-service
+          uri: lb://file-service
+          predicates:
+            - Path=/api/files/**
+          filters:
+            - StripPrefix=0
+        
+        # File Serving Routes (for /uploads/** - static file serving)
+        - id: file-serving-uploads
+          uri: lb://file-service
+          predicates:
+            - Path=/uploads/**
+          filters:
+            - StripPrefix=0
+        
+        # Query, QuickLink, and Meeting Routes (merged into Class Service)
+        - id: class-service-queries
+          uri: lb://class-service
+          predicates:
+            - Path=/api/queries/**
+          filters:
+            - StripPrefix=0
+        
+        - id: class-service-quicklinks
+          uri: lb://class-service
+          predicates:
+            - Path=/api/quicklinks/**
+          filters:
+            - StripPrefix=0
+        
+        - id: class-service-meetings
+          uri: lb://class-service
+          predicates:
+            - Path=/api/meetings/**
+          filters:
+            - StripPrefix=0
+        
+        # WebSocket Routes (for real-time meeting updates)
+        - id: class-service-websocket
+          uri: lb://class-service
+          predicates:
+            - Path=/ws/**
+          filters:
+            - StripPrefix=0
+        
+        # AI Assistant Service Routes
+        - id: ai-assistant-service
+          uri: lb://ai-assistant-service
+          predicates:
+            - Path=/api/ai/**
+          filters:
+            - StripPrefix=0
+      
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: 
+              - "http://localhost:3000"
+              - "https://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+            maxAge: 3600
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+

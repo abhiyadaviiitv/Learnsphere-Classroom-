@@ -15,7 +15,8 @@ import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 
 function AssignmentDisplay() {
-    const { assignmentid } = useParams();
+    const { assignmentid, assignmentId } = useParams();
+    const effectiveAssignmentId = assignmentId || assignmentid;
     const navigate = useNavigate();
     const { user } = useAuth();
     const [assignment, setAssignment] = useState(null);
@@ -37,7 +38,7 @@ function AssignmentDisplay() {
                 setLoading(true);
                 // Fetch Assignment
                 const assignmentRes = await axios.get(
-                    `http://localhost:8080/api/assignments/details/${assignmentid}`,
+                    `http://localhost:8080/api/assignments/details/${effectiveAssignmentId}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 setAssignment(assignmentRes.data);
@@ -51,7 +52,7 @@ function AssignmentDisplay() {
 
                 // Fetch Submission
                 const submissionRes = await axios.get(
-                    `http://localhost:8080/api/submissions/${assignmentid}/${studentId}`,
+                    `http://localhost:8080/api/submissions/${effectiveAssignmentId}/${studentId}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
 
@@ -75,10 +76,10 @@ function AssignmentDisplay() {
             }
         };
 
-        if (token && assignmentid) {
+        if (token && effectiveAssignmentId) {
             fetchData();
         }
-    }, [assignmentid, token, studentId]);
+    }, [effectiveAssignmentId, token, studentId]);
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
@@ -141,8 +142,8 @@ function AssignmentDisplay() {
             });
 
             const url = submission
-                ? `http://localhost:8080/api/submissions/assignments/${assignmentid}/submissions/${submission.id}`
-                : `http://localhost:8080/api/submissions/assignments/${assignmentid}/submissions`;
+                ? `http://localhost:8080/api/submissions/assignments/${effectiveAssignmentId}/submissions/${submission.id}`
+                : `http://localhost:8080/api/submissions/assignments/${effectiveAssignmentId}/submissions`;
 
             const method = submission ? 'put' : 'post';
 

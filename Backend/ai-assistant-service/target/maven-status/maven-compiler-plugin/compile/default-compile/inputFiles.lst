@@ -1,0 +1,11 @@
+/home/abhijeet/Desktop/learnsphere/Backend/ai-assistant-service/src/main/java/com/learnsphere/ai/dto/PdfGradingRequest.java
+/home/abhijeet/Desktop/learnsphere/Backend/ai-assistant-service/src/main/java/com/learnsphere/ai/controller/AiAssistantController.java
+/home/abhijeet/Desktop/learnsphere/Backend/ai-assistant-service/src/main/java/com/learnsphere/ai/service/PdfGradingService.java
+/home/abhijeet/Desktop/learnsphere/Backend/ai-assistant-service/src/main/java/com/learnsphere/ai/dto/QuestionGenerationRequest.java
+/home/abhijeet/Desktop/learnsphere/Backend/ai-assistant-service/src/main/java/com/learnsphere/ai/AiAssistantServiceApplication.java
+/home/abhijeet/Desktop/learnsphere/Backend/ai-assistant-service/src/main/java/com/learnsphere/ai/dto/GradingResponse.java
+/home/abhijeet/Desktop/learnsphere/Backend/ai-assistant-service/src/main/java/com/learnsphere/ai/dto/GradingRequest.java
+/home/abhijeet/Desktop/learnsphere/Backend/ai-assistant-service/src/main/java/com/learnsphere/ai/service/AiGradingService.java
+/home/abhijeet/Desktop/learnsphere/Backend/ai-assistant-service/src/main/java/com/learnsphere/ai/service/PdfProcessingService.java
+/home/abhijeet/Desktop/learnsphere/Backend/ai-assistant-service/src/main/java/com/learnsphere/ai/dto/QuestionGenerationResponse.java
+/home/abhijeet/Desktop/learnsphere/Backend/ai-assistant-service/src/main/java/com/learnsphere/ai/service/QuestionGenerationService.java

@@ -1,0 +1,257 @@
+version: '3.8'
+
+services:
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: learnsphere-rabbitmq
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - learnsphere-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Eureka Server (Service Discovery)
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: learnsphere-eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - learnsphere-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: learnsphere-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - learnsphere-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # User Service
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: learnsphere-user-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - MONGODB_URI=${MONGODB_URI:-mongodb+srv://madaraxghost404:rZd9rwWtNqL7CWVr@classroom.5qglv.mongodb.net/?appName=classroom}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-classroom}
+      - JWT_SECRET=${JWT_SECRET:-c0349809771c2601589f51e8ee2d970d04b66d5237cc7c5e}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - learnsphere-network
+    volumes:
+      - user_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Class Service
+  class-service:
+    build:
+      context: ./class-service
+      dockerfile: Dockerfile
+    container_name: learnsphere-class-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - MONGODB_URI=${MONGODB_URI:-mongodb+srv://madaraxghost404:rZd9rwWtNqL7CWVr@classroom.5qglv.mongodb.net/?appName=classroom}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-classroom}
+      - JWT_SECRET=${JWT_SECRET:-c0349809771c2601589f51e8ee2d970d04b66d5237cc7c5e}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - learnsphere-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Assignment Service
+  assignment-service:
+    build:
+      context: ./assignment-service
+      dockerfile: Dockerfile
+    container_name: learnsphere-assignment-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - MONGODB_URI=${MONGODB_URI:-mongodb+srv://madaraxghost404:rZd9rwWtNqL7CWVr@classroom.5qglv.mongodb.net/?appName=classroom}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-classroom}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - learnsphere-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Submission Service
+  submission-service:
+    build:
+      context: ./submission-service
+      dockerfile: Dockerfile
+    container_name: learnsphere-submission-service
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - MONGODB_URI=${MONGODB_URI:-mongodb+srv://madaraxghost404:rZd9rwWtNqL7CWVr@classroom.5qglv.mongodb.net/?appName=classroom}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-classroom}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - learnsphere-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Analytics Service
+  analytics-service:
+    build:
+      context: .
+      dockerfile: ./analytics-service/Dockerfile
+    container_name: learnsphere-analytics-service
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - MONGODB_URI=${MONGODB_URI:-mongodb+srv://madaraxghost404:rZd9rwWtNqL7CWVr@classroom.5qglv.mongodb.net/?appName=classroom}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-classroom}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+    networks:
+      - learnsphere-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: learnsphere-notification-service
+    ports:
+      - "8086:8086"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - MONGODB_URI=${MONGODB_URI:-mongodb+srv://madaraxghost404:rZd9rwWtNqL7CWVr@classroom.5qglv.mongodb.net/?appName=classroom}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-classroom}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - learnsphere-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8086/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # File Service
+  file-service:
+    build:
+      context: ./file-service
+      dockerfile: Dockerfile
+    container_name: learnsphere-file-service
+    ports:
+      - "8087:8087"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - MONGODB_URI=${MONGODB_URI:-mongodb+srv://madaraxghost404:rZd9rwWtNqL7CWVr@classroom.5qglv.mongodb.net/?appName=classroom}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-classroom}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - learnsphere-network
+    volumes:
+      - file_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8087/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  rabbitmq_data:
+  user_uploads:
+  file_uploads:
+
+networks:
+  learnsphere-network:
+    driver: bridge
+

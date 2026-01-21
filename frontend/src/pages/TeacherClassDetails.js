@@ -167,7 +167,12 @@ function TeacherClassDetails() {
         const response = await axios.get(`http://localhost:8080/api/assignments/${classId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setRecentAssignments(response.data || []);
+        const assignments = response.data || [];
+        // Sort by due date (ascending - earliest first) and take only 2 most recent
+        const sortedAssignments = assignments
+          .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+          .slice(0, 2);
+        setRecentAssignments(sortedAssignments);
       } catch (err) {
         console.error('Error fetching assignments:', err);
         setRecentAssignments([]);
@@ -322,7 +327,16 @@ function TeacherClassDetails() {
       setMeetingStatus({ isLive: false, roomId: null });
     } catch (err) {
       console.error('Error stopping meeting:', err);
-      alert('Failed to stop meeting: ' + (err.response?.data?.error || err.message));
+      if (err.response?.status === 401) {
+        const errorMsg = err.response?.data?.error || 'Unauthorized';
+        if (errorMsg.includes('User ID not provided') || errorMsg.includes('User id is not provided')) {
+          alert('Session expired. Please log out and log back in to refresh your token.');
+        } else {
+          alert('Failed to stop meeting: ' + errorMsg);
+        }
+      } else {
+        alert('Failed to stop meeting: ' + (err.response?.data?.error || err.message));
+      }
     }
   };
 
@@ -343,8 +357,8 @@ function TeacherClassDetails() {
       setNewNotification({ title: '', message: '', priority: 'normal' });
       setCreateNotificationOpen(false);
     } catch (err) {
-      console.error('Error creating notification:', err);
-      alert('Failed to create notification. Please try again.');
+      console.error('Error creating announcement:', err);
+      alert('Failed to create announcement. Please try again.');
     }
   };
 
@@ -355,8 +369,8 @@ function TeacherClassDetails() {
       });
       setNotifications(prev => prev.filter(n => n.id !== id));
     } catch (err) {
-      console.error('Error deleting notification:', err);
-      alert('Failed to delete notification. Please try again.');
+      console.error('Error deleting announcement:', err);
+      alert('Failed to delete announcement. Please try again.');
     }
   };
 
@@ -397,7 +411,8 @@ function TeacherClassDetails() {
   };
 
   const studentCount = classData?.studentIds?.length || 0;
-  const unreadNotifications = notifications.filter(n => !n.readBy?.includes(teacherId)).length;
+  // Teachers don't have unread notifications - this is only for students
+  const unreadNotifications = 0;
 
   if (loading) {
     return (
@@ -651,18 +666,13 @@ function TeacherClassDetails() {
               </div>
             </div>
 
-            {/* Notifications - Teacher Only */}
+            {/* Announcements */}
             <div className="card overflow-hidden">
               <div className="bg-gradient-to-r from-warning-500 to-warning-600 p-4 flex items-center justify-between">
                 <h2 className="text-xl font-display font-bold text-white flex items-center gap-2">
                   <Bell className="w-5 h-5" />
-                  Class Notifications
+                  Class Announcements
                 </h2>
-                {unreadNotifications > 0 && (
-                  <span className="bg-white text-warning-600 text-xs font-bold px-2 py-1 rounded-full">
-                    {unreadNotifications}
-                  </span>
-                )}
               </div>
               <div className="p-2">
                 <motion.button
@@ -672,13 +682,13 @@ function TeacherClassDetails() {
                   className="w-full btn-primary mb-3 flex items-center justify-center gap-2 text-sm py-2"
                 >
                   <Plus className="w-4 h-4" />
-                  Create Notification
+                  Create Announcement
                 </motion.button>
 
                 <div className="max-h-80 overflow-y-auto space-y-2">
                   {notifications.length === 0 ? (
                     <div className="p-4 text-center text-gray-500 text-sm">
-                      No notifications yet
+                      No announcements yet
                     </div>
                   ) : (
                     notifications.map((notification) => (
@@ -686,14 +696,10 @@ function TeacherClassDetails() {
                         key={notification.id}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className={`p-3 rounded-lg transition-colors ${notification.readBy?.includes(teacherId) ? 'bg-gray-50' : 'bg-primary-50 border border-primary-200'
-                          }`}
+                        className="p-3 rounded-lg transition-colors bg-gray-50"
                       >
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <div className="flex items-center gap-2 flex-1">
-                            {!notification.readBy?.includes(teacherId) && (
-                              <div className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0 mt-1" />
-                            )}
                             <div className="flex-1 min-w-0">
                               <h4 className="font-semibold text-sm text-gray-900 truncate">
                                 {notification.title}
@@ -977,7 +983,7 @@ function TeacherClassDetails() {
               <div className="flex items-center justify-between mb-6">
                 <Dialog.Title className="text-2xl font-display font-bold text-gray-900 flex items-center gap-2">
                   <Bell className="w-6 h-6 text-primary-600" />
-                  Create Class Notification
+                  Create Class Announcement
                 </Dialog.Title>
                 <Dialog.Close asChild>
                   <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -1045,7 +1051,7 @@ function TeacherClassDetails() {
                     disabled={!newNotification.title.trim() || !newNotification.message.trim()}
                     className="btn-primary flex-1"
                   >
-                    Create Notification
+                    Create Announcement
                   </button>
                 </div>
               </div>

@@ -1,0 +1,9 @@
+*.md
+target/
+*.jar
+*.class
+.env
+node_modules/
+build/
+uploads/
+.DS_Store

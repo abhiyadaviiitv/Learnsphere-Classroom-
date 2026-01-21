@@ -1,0 +1,10 @@
+com/learnsphere/assignment/service/FileStorageService.class
+com/learnsphere/assignment/dto/Assignmentdto.class
+com/learnsphere/assignment/AssignmentServiceApplication.class
+com/learnsphere/assignment/controller/AssignmentController.class
+com/learnsphere/assignment/dto/Question.class
+com/learnsphere/assignment/service/AssignmentService.class
+com/learnsphere/assignment/dto/Attachment.class
+com/learnsphere/assignment/repository/AssignmentRepository.class
+com/learnsphere/assignment/model/Assignment.class
+com/learnsphere/assignment/dto/AssignmentMapper.class

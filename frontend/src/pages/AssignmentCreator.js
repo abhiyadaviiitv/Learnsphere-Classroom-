@@ -13,7 +13,9 @@ import {
   CheckCircle2,
   Upload,
   Save,
-  Eye
+  Eye,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
@@ -61,6 +63,13 @@ function AssignmentCreator() {
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiTopic, setAiTopic] = useState('');
+  const [aiDifficulty, setAiDifficulty] = useState('medium');
+  const [aiQuestionType, setAiQuestionType] = useState('mixed');
+  const [aiNumberOfQuestions, setAiNumberOfQuestions] = useState(5);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedQuestions, setGeneratedQuestions] = useState([]);
 
   // Memoized validation - only runs when needed
   const validateField = useCallback((field, value) => {
@@ -444,13 +453,22 @@ function AssignmentCreator() {
               <div className="border-t border-gray-200 pt-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">Questions</h3>
-                  <button
-                    onClick={handleAddQuestion}
-                    className="btn-ghost flex items-center gap-2 text-sm"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Question
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setAiDialogOpen(true)}
+                      className="btn-primary flex items-center gap-2 text-sm"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Generate with AI
+                    </button>
+                    <button
+                      onClick={handleAddQuestion}
+                      className="btn-ghost flex items-center gap-2 text-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Question
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -717,6 +735,199 @@ function AssignmentCreator() {
                 >
                   Discard
                 </button>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
+
+        {/* AI Question Generation Dialog */}
+        <Dialog.Root open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
+            <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl z-50 max-h-[90vh] overflow-y-auto">
+              <Dialog.Title className="text-2xl font-display font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <Sparkles className="w-6 h-6 text-primary-600" />
+                Generate Questions with AI
+              </Dialog.Title>
+              <Dialog.Description className="text-gray-600 mb-6">
+                Let AI help you create questions for your assignment based on a topic.
+              </Dialog.Description>
+              
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Topic <span className="text-error-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={aiTopic}
+                    onChange={(e) => setAiTopic(e.target.value)}
+                    className="input-field"
+                    placeholder="e.g., Introduction to Java Programming, World War II, Photosynthesis"
+                    disabled={isGenerating}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Difficulty
+                    </label>
+                    <select
+                      value={aiDifficulty}
+                      onChange={(e) => setAiDifficulty(e.target.value)}
+                      className="input-field"
+                      disabled={isGenerating}
+                    >
+                      <option value="easy">Easy</option>
+                      <option value="medium">Medium</option>
+                      <option value="hard">Hard</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Number of Questions
+                    </label>
+                    <input
+                      type="number"
+                      value={aiNumberOfQuestions}
+                      onChange={(e) => setAiNumberOfQuestions(parseInt(e.target.value) || 5)}
+                      className="input-field"
+                      min="1"
+                      max="20"
+                      disabled={isGenerating}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Question Type
+                  </label>
+                  <select
+                    value={aiQuestionType}
+                    onChange={(e) => setAiQuestionType(e.target.value)}
+                    className="input-field"
+                    disabled={isGenerating}
+                  >
+                    <option value="mixed">Mixed</option>
+                    <option value="multiple-choice">Multiple Choice</option>
+                    <option value="short-answer">Short Answer</option>
+                    <option value="essay">Essay</option>
+                  </select>
+                </div>
+              </div>
+              
+              {isGenerating && (
+                <div className="mb-6 p-4 bg-primary-50 rounded-lg flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 text-primary-600 animate-spin" />
+                  <span className="text-primary-700">Generating questions with AI...</span>
+                </div>
+              )}
+              
+              {generatedQuestions.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">Generated Questions</h4>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {generatedQuestions.map((q, idx) => (
+                      <div key={idx} className="p-4 border border-gray-200 rounded-lg">
+                        <div className="flex items-start justify-between mb-2">
+                          <p className="font-medium text-gray-900">{q.question}</p>
+                          <span className="text-xs text-gray-500 ml-2">{q.type}</span>
+                        </div>
+                        {q.options && q.options.length > 0 && (
+                          <div className="ml-4 mt-2">
+                            <p className="text-xs text-gray-600 mb-1">Options:</p>
+                            <ul className="list-disc list-inside text-sm text-gray-700">
+                              {q.options.map((opt, optIdx) => (
+                                <li key={optIdx}>{opt}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {q.correctAnswer && (
+                          <p className="text-xs text-gray-600 mt-2">
+                            <span className="font-medium">Answer:</span> {q.correctAnswer}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 mt-2">{q.points || 10} points</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex gap-3">
+                <Dialog.Close asChild>
+                  <button className="btn-ghost flex-1" disabled={isGenerating}>Cancel</button>
+                </Dialog.Close>
+                <button
+                  onClick={async () => {
+                    if (!aiTopic.trim()) {
+                      alert('Please enter a topic');
+                      return;
+                    }
+                    setIsGenerating(true);
+                    setGeneratedQuestions([]);
+                    try {
+                      const response = await axios.post(
+                        'http://localhost:8080/api/ai/generate-questions',
+                        {
+                          topic: aiTopic,
+                          difficulty: aiDifficulty,
+                          numberOfQuestions: aiNumberOfQuestions,
+                          questionType: aiQuestionType
+                        },
+                        {
+                          headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                          }
+                        }
+                      );
+                      setGeneratedQuestions(response.data.questions || []);
+                    } catch (err) {
+                      console.error('Error generating questions:', err);
+                      alert('Failed to generate questions. Please try again.');
+                    } finally {
+                      setIsGenerating(false);
+                    }
+                  }}
+                  className="btn-primary flex-1 flex items-center justify-center gap-2"
+                  disabled={isGenerating || !aiTopic.trim()}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Generate Questions
+                    </>
+                  )}
+                </button>
+                {generatedQuestions.length > 0 && (
+                  <button
+                    onClick={() => {
+                      const newQuestions = generatedQuestions.map((q, idx) => ({
+                        id: Date.now() + idx,
+                        text: q.question,
+                        points: q.points || 10,
+                        expectedAnswer: q.correctAnswer || ''
+                      }));
+                      setQuestions([...questions, ...newQuestions]);
+                      setAiDialogOpen(false);
+                      setGeneratedQuestions([]);
+                      setAiTopic('');
+                    }}
+                    className="btn-primary flex-1 bg-success-500 hover:bg-success-600"
+                  >
+                    Add to Assignment
+                  </button>
+                )}
               </div>
             </Dialog.Content>
           </Dialog.Portal>

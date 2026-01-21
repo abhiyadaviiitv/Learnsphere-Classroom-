@@ -1,0 +1,5 @@
+com/learnsphere/notification/model/Notification.class
+com/learnsphere/notification/NotificationServiceApplication.class
+com/learnsphere/notification/controller/NotificationController.class
+com/learnsphere/notification/service/NotificationService.class
+com/learnsphere/notification/repository/NotificationRepository.class

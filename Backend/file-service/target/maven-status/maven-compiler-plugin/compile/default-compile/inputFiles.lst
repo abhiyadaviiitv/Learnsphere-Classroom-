@@ -1,0 +1,6 @@
+/home/abhijeet/Desktop/learnsphere/Backend/file-service/src/main/java/com/learnsphere/file/FileServiceApplication.java
+/home/abhijeet/Desktop/learnsphere/Backend/file-service/src/main/java/com/learnsphere/file/controller/FileController.java
+/home/abhijeet/Desktop/learnsphere/Backend/file-service/src/main/java/com/learnsphere/file/config/WebMvcConfig.java
+/home/abhijeet/Desktop/learnsphere/Backend/file-service/src/main/java/com/learnsphere/file/service/FileStorageService.java
+/home/abhijeet/Desktop/learnsphere/Backend/file-service/src/main/java/com/learnsphere/file/dto/Attachment.java
+/home/abhijeet/Desktop/learnsphere/Backend/file-service/src/main/java/com/learnsphere/file/config/SecurityConfig.java

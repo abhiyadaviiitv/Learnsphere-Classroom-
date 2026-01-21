@@ -1,0 +1,6 @@
+com/learnsphere/file/dto/Attachment.class
+com/learnsphere/file/config/WebMvcConfig.class
+com/learnsphere/file/service/FileStorageService.class
+com/learnsphere/file/controller/FileController.class
+com/learnsphere/file/FileServiceApplication.class
+com/learnsphere/file/config/SecurityConfig.class

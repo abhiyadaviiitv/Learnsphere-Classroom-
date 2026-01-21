@@ -8,7 +8,10 @@ import {
     Clock,
     FileText,
     Download,
-    Search
+    Search,
+    Sparkles,
+    Loader2,
+    X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
@@ -23,6 +26,13 @@ function TeacherSubmissionView() {
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [gradingDialogOpen, setGradingDialogOpen] = useState(false);
+    const [selectedSubmission, setSelectedSubmission] = useState(null);
+    const [isGrading, setIsGrading] = useState(false);
+    const [gradingResult, setGradingResult] = useState(null);
+    const [pdfGradingDialogOpen, setPdfGradingDialogOpen] = useState(false);
+    const [selectedPdfSubmission, setSelectedPdfSubmission] = useState(null);
+    const [referencePdfPath, setReferencePdfPath] = useState('');
 
     const token = localStorage.getItem('token');
 
@@ -181,9 +191,18 @@ function TeacherSubmissionView() {
                         <ArrowLeft className="w-4 h-4" />
                         <span>Back to Assignments</span>
                     </button>
-                    <div>
-                        <h1 className="text-3xl font-display font-bold text-gray-900">{assignment?.title}</h1>
-                        <p className="text-gray-600 mt-1">Submissions</p>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-display font-bold text-gray-900">{assignment?.title}</h1>
+                            <p className="text-gray-600 mt-1">Submissions</p>
+                        </div>
+                        <button
+                            onClick={() => navigate(`/teacher/class/${classId}/assignments/${assignmentId}`)}
+                            className="btn-ghost flex items-center gap-2"
+                        >
+                            <FileText className="w-4 h-4" />
+                            View Assignment Details
+                        </button>
                     </div>
                 </div>
 
@@ -276,10 +295,41 @@ function TeacherSubmissionView() {
                                                 ) : '-'}
                                             </td>
                                             <td className="px-6 py-5 text-right">
-                                                {/* Placeholder for grade action */}
-                                                <button className="text-primary-600 hover:text-primary-700 font-medium text-xs">
-                                                    Grade
-                                                </button>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {submission && submission.attachments?.some(a => a.fileName?.toLowerCase().endsWith('.pdf')) && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedPdfSubmission(submission);
+                                                                // Find reference PDF from assignment attachments
+                                                                const refPdf = assignment?.attachments?.find(a => a.fileName?.toLowerCase().endsWith('.pdf'));
+                                                                if (refPdf) {
+                                                                    // Extract filename from fileUrl (e.g., /uploads/uuid.filename.pdf)
+                                                                    const fileName = refPdf.fileUrl.split('/').pop();
+                                                                    setReferencePdfPath(fileName);
+                                                                }
+                                                                setPdfGradingDialogOpen(true);
+                                                            }}
+                                                            className="text-primary-600 hover:text-primary-700 font-medium text-xs flex items-center gap-1"
+                                                            title="AI Grade PDF with Context"
+                                                        >
+                                                            <Sparkles className="w-3 h-3" />
+                                                            AI Grade PDF
+                                                        </button>
+                                                    )}
+                                                    {submission && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedSubmission(submission);
+                                                                setGradingDialogOpen(true);
+                                                            }}
+                                                            className="text-primary-600 hover:text-primary-700 font-medium text-xs flex items-center gap-1"
+                                                            title="AI Suggest Grade"
+                                                        >
+                                                            <Sparkles className="w-3 h-3" />
+                                                            AI Grade
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -289,6 +339,345 @@ function TeacherSubmissionView() {
                     </div>
                 </div>
             </main>
+
+            {/* AI Grading Dialog */}
+            {gradingDialogOpen && selectedSubmission && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b border-gray-200">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-2xl font-display font-bold text-gray-900 flex items-center gap-2">
+                                    <Sparkles className="w-6 h-6 text-primary-600" />
+                                    AI Grading Assistant
+                                </h2>
+                                <button
+                                    onClick={() => {
+                                        setGradingDialogOpen(false);
+                                        setSelectedSubmission(null);
+                                        setGradingResult(null);
+                                    }}
+                                    className="p-2 hover:bg-gray-100 rounded-lg"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="p-6">
+                            {!gradingResult && !isGrading && (
+                                <div className="space-y-4">
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-2">Question</h3>
+                                        <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">
+                                            {assignment?.questions?.[0]?.text || 'No question available'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-2">Student Answer</h3>
+                                        <p className="text-gray-700 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                                            {selectedSubmission.content || selectedSubmission.questionAnswers?.[Object.keys(selectedSubmission.questionAnswers || {})[0]] || 'No answer provided'}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={async () => {
+                                            setIsGrading(true);
+                                            try {
+                                                const questionText = assignment?.questions?.[0]?.text || 'Evaluate this submission';
+                                                const studentAnswer = selectedSubmission.content || selectedSubmission.questionAnswers?.[Object.keys(selectedSubmission.questionAnswers || {})[0]] || '';
+                                                
+                                                const response = await axios.post(
+                                                    'http://localhost:8080/api/ai/grade',
+                                                    {
+                                                        question: questionText,
+                                                        studentAnswer: studentAnswer,
+                                                        maxPoints: assignment?.points || 100,
+                                                        rubric: assignment?.instructions || ''
+                                                    },
+                                                    {
+                                                        headers: {
+                                                            'Authorization': `Bearer ${token}`,
+                                                            'Content-Type': 'application/json'
+                                                        }
+                                                    }
+                                                );
+                                                setGradingResult(response.data);
+                                            } catch (err) {
+                                                console.error('Error grading submission:', err);
+                                                alert('Failed to grade submission. Please try again.');
+                                            } finally {
+                                                setIsGrading(false);
+                                            }
+                                        }}
+                                        className="btn-primary w-full flex items-center justify-center gap-2"
+                                    >
+                                        <Sparkles className="w-4 h-4" />
+                                        Get AI Grade Suggestion
+                                    </button>
+                                </div>
+                            )}
+                            {isGrading && (
+                                <div className="text-center py-8">
+                                    <Loader2 className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-4" />
+                                    <p className="text-gray-600">AI is analyzing the submission...</p>
+                                </div>
+                            )}
+                            {gradingResult && (
+                                <div className="space-y-4">
+                                    <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm font-medium text-gray-700">Suggested Score</span>
+                                            <span className="text-2xl font-bold text-primary-600">
+                                                {gradingResult.suggestedScore} / {assignment?.points || 100}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-2">Feedback</h3>
+                                        <p className="text-gray-700 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                                            {gradingResult.feedback}
+                                        </p>
+                                    </div>
+                                    {gradingResult.feedbackItems && gradingResult.feedbackItems.length > 0 && (
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900 mb-2">Feedback Items</h3>
+                                            <ul className="space-y-2">
+                                                {gradingResult.feedbackItems.map((item, idx) => (
+                                                    <li key={idx} className="flex items-start gap-2 text-gray-700">
+                                                        <CheckCircle className="w-4 h-4 text-success-500 mt-1 flex-shrink-0" />
+                                                        <span>{item}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {gradingResult.reasoning && (
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900 mb-2">Reasoning</h3>
+                                            <p className="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
+                                                {gradingResult.reasoning}
+                                            </p>
+                                        </div>
+                                    )}
+                                    <div className="flex gap-3 pt-4 border-t border-gray-200">
+                                        <button
+                                            onClick={() => {
+                                                setGradingDialogOpen(false);
+                                                setSelectedSubmission(null);
+                                                setGradingResult(null);
+                                            }}
+                                            className="btn-ghost flex-1"
+                                        >
+                                            Close
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                // Update submission with AI suggested score
+                                                try {
+                                                    await axios.put(
+                                                        `http://localhost:8080/api/submissions/assignments/${assignmentId}/submissions/${selectedSubmission.id}`,
+                                                        {
+                                                            ...selectedSubmission,
+                                                            score: gradingResult.suggestedScore
+                                                        },
+                                                        {
+                                                            headers: {
+                                                                'Authorization': `Bearer ${token}`,
+                                                                'Content-Type': 'application/json'
+                                                            }
+                                                        }
+                                                    );
+                                                    alert('Score updated successfully!');
+                                                    setGradingDialogOpen(false);
+                                                    window.location.reload();
+                                                } catch (err) {
+                                                    console.error('Error updating score:', err);
+                                                    alert('Failed to update score. Please try again.');
+                                                }
+                                            }}
+                                            className="btn-primary flex-1"
+                                        >
+                                            Apply Score
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* PDF Grading with Context Dialog */}
+            {pdfGradingDialogOpen && selectedPdfSubmission && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b border-gray-200">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-2xl font-display font-bold text-gray-900 flex items-center gap-2">
+                                    <Sparkles className="w-6 h-6 text-primary-600" />
+                                    AI PDF Grading with Context
+                                </h2>
+                                <button
+                                    onClick={() => {
+                                        setPdfGradingDialogOpen(false);
+                                        setSelectedPdfSubmission(null);
+                                        setReferencePdfPath('');
+                                        setGradingResult(null);
+                                    }}
+                                    className="p-2 hover:bg-gray-100 rounded-lg"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="p-6">
+                            {!gradingResult && !isGrading && (
+                                <div className="space-y-4">
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-2">Reference Material (Context)</h3>
+                                        <p className="text-sm text-gray-600 mb-2">
+                                            {referencePdfPath ? `Using: ${referencePdfPath}` : 'No reference PDF found in assignment. Please upload one.'}
+                                        </p>
+                                        {!referencePdfPath && (
+                                            <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                                                Note: Upload a reference PDF in the assignment to use as context for grading.
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-2">Student Submission PDF</h3>
+                                        <p className="text-sm text-gray-600">
+                                            {selectedPdfSubmission.attachments?.find(a => a.fileName?.toLowerCase().endsWith('.pdf'))?.fileName || 'No PDF found'}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={async () => {
+                                            if (!referencePdfPath) {
+                                                alert('No reference PDF found. Please upload a reference PDF in the assignment.');
+                                                return;
+                                            }
+                                            setIsGrading(true);
+                                            try {
+                                                const studentPdf = selectedPdfSubmission.attachments?.find(a => a.fileName?.toLowerCase().endsWith('.pdf'));
+                                                if (!studentPdf) {
+                                                    throw new Error('No PDF found in submission');
+                                                }
+                                                
+                                                // Extract filename from fileUrl
+                                                const studentPdfPath = studentPdf.fileUrl.split('/').pop();
+                                                
+                                                const response = await axios.post(
+                                                    'http://localhost:8080/api/ai/grade-pdf',
+                                                    {
+                                                        referenceMaterialPath: referencePdfPath,
+                                                        studentSubmissionPath: studentPdfPath,
+                                                        maxPoints: assignment?.points || 100,
+                                                        rubric: assignment?.instructions || ''
+                                                    },
+                                                    {
+                                                        headers: {
+                                                            'Authorization': `Bearer ${token}`,
+                                                            'Content-Type': 'application/json'
+                                                        }
+                                                    }
+                                                );
+                                                setGradingResult(response.data);
+                                            } catch (err) {
+                                                console.error('Error grading PDF:', err);
+                                                alert('Failed to grade PDF. Please try again.');
+                                            } finally {
+                                                setIsGrading(false);
+                                            }
+                                        }}
+                                        className="btn-primary w-full flex items-center justify-center gap-2"
+                                        disabled={!referencePdfPath}
+                                    >
+                                        <Sparkles className="w-4 h-4" />
+                                        Grade PDF with AI
+                                    </button>
+                                </div>
+                            )}
+                            {isGrading && (
+                                <div className="text-center py-8">
+                                    <Loader2 className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-4" />
+                                    <p className="text-gray-600">AI is analyzing the PDFs...</p>
+                                    <p className="text-sm text-gray-500 mt-2">This may take a moment</p>
+                                </div>
+                            )}
+                            {gradingResult && (
+                                <div className="space-y-4">
+                                    <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm font-medium text-gray-700">Suggested Score</span>
+                                            <span className="text-2xl font-bold text-primary-600">
+                                                {gradingResult.suggestedScore} / {assignment?.points || 100}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-2">Feedback</h3>
+                                        <p className="text-gray-700 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                                            {gradingResult.feedback}
+                                        </p>
+                                    </div>
+                                    {gradingResult.feedbackItems && gradingResult.feedbackItems.length > 0 && (
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900 mb-2">Feedback Items</h3>
+                                            <ul className="space-y-2">
+                                                {gradingResult.feedbackItems.map((item, idx) => (
+                                                    <li key={idx} className="flex items-start gap-2 text-gray-700">
+                                                        <CheckCircle className="w-4 h-4 text-success-500 mt-1 flex-shrink-0" />
+                                                        <span>{item}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    <div className="flex gap-3 pt-4 border-t border-gray-200">
+                                        <button
+                                            onClick={() => {
+                                                setPdfGradingDialogOpen(false);
+                                                setSelectedPdfSubmission(null);
+                                                setReferencePdfPath('');
+                                                setGradingResult(null);
+                                            }}
+                                            className="btn-ghost flex-1"
+                                        >
+                                            Close
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    await axios.put(
+                                                        `http://localhost:8080/api/submissions/assignments/${assignmentId}/submissions/${selectedPdfSubmission.id}`,
+                                                        {
+                                                            ...selectedPdfSubmission,
+                                                            score: gradingResult.suggestedScore
+                                                        },
+                                                        {
+                                                            headers: {
+                                                                'Authorization': `Bearer ${token}`,
+                                                                'Content-Type': 'application/json'
+                                                            }
+                                                        }
+                                                    );
+                                                    alert('Score updated successfully!');
+                                                    setPdfGradingDialogOpen(false);
+                                                    window.location.reload();
+                                                } catch (err) {
+                                                    console.error('Error updating score:', err);
+                                                    alert('Failed to update score. Please try again.');
+                                                }
+                                            }}
+                                            className="btn-primary flex-1"
+                                        >
+                                            Apply Score
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

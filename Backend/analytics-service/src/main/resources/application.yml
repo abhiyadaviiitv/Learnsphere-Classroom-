@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: analytics-service
+  
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb+srv://madaraxghost404:rZd9rwWtNqL7CWVr@classroom.5qglv.mongodb.net/?appName=classroom}
+      database: ${MONGODB_DATABASE:classroom}
+
+# Server Configuration
+server:
+  port: 8085
+
+# Eureka Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.learnsphere.analytics: DEBUG
+
+
