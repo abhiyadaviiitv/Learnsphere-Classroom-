@@ -1,0 +1,9 @@
+/home/abhijeet/Desktop/learnsphere/Backend/analytics-service/src/main/java/com/learnsphere/analytics/controller/AnalyticsController.java
+/home/abhijeet/Desktop/learnsphere/Backend/analytics-service/src/main/java/com/learnsphere/analytics/model/Class.java
+/home/abhijeet/Desktop/learnsphere/Backend/analytics-service/src/main/java/com/learnsphere/analytics/repository/ClassRepository.java
+/home/abhijeet/Desktop/learnsphere/Backend/analytics-service/src/main/java/com/learnsphere/analytics/repository/AssignmentRepository.java
+/home/abhijeet/Desktop/learnsphere/Backend/analytics-service/src/main/java/com/learnsphere/analytics/model/Submission.java
+/home/abhijeet/Desktop/learnsphere/Backend/analytics-service/src/main/java/com/learnsphere/analytics/AnalyticsServiceApplication.java
+/home/abhijeet/Desktop/learnsphere/Backend/analytics-service/src/main/java/com/learnsphere/analytics/repository/SubmissionRepository.java
+/home/abhijeet/Desktop/learnsphere/Backend/analytics-service/src/main/java/com/learnsphere/analytics/model/Assignment.java
+/home/abhijeet/Desktop/learnsphere/Backend/analytics-service/src/main/java/com/learnsphere/analytics/client/UserServiceClient.java
