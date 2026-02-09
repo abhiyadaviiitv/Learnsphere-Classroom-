@@ -1,0 +1,13 @@
+# Exclude build artifacts
+**/target/
+**/.git/
+**/.gitignore
+*.md
+.DS_Store
+.idea/
+*.iml
+
+# But keep common module for analytics-service build
+!common/
+
+
