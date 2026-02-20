@@ -1,0 +1,9 @@
+com/learnsphere/analytics/repository/AssignmentRepository.class
+com/learnsphere/analytics/controller/AnalyticsController.class
+com/learnsphere/analytics/model/Submission.class
+com/learnsphere/analytics/repository/ClassRepository.class
+com/learnsphere/analytics/model/Assignment.class
+com/learnsphere/analytics/client/UserServiceClient.class
+com/learnsphere/analytics/repository/SubmissionRepository.class
+com/learnsphere/analytics/AnalyticsServiceApplication.class
+com/learnsphere/analytics/model/Class.class
