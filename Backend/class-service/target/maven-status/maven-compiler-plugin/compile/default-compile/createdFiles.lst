@@ -1,0 +1,16 @@
+com/learnsphere/class_service/model/QuickLink.class
+com/learnsphere/class_service/repository/QuickLinkRepository.class
+com/learnsphere/class_service/controller/QueryController.class
+com/learnsphere/class_service/service/QueryService.class
+com/learnsphere/class_service/model/Class.class
+com/learnsphere/class_service/service/ClassService.class
+com/learnsphere/class_service/config/WebSocketConfig.class
+com/learnsphere/class_service/model/Query.class
+com/learnsphere/class_service/service/JwtService.class
+com/learnsphere/class_service/controller/QuickLinkController.class
+com/learnsphere/class_service/repository/QueryRepository.class
+com/learnsphere/class_service/controller/MeetingController.class
+com/learnsphere/class_service/service/QuickLinkService.class
+com/learnsphere/class_service/ClassServiceApplication.class
+com/learnsphere/class_service/repository/ClassRepository.class
+com/learnsphere/class_service/controller/ClassController.class
