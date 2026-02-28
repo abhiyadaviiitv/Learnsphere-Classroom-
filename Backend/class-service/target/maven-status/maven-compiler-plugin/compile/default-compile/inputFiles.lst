@@ -1,0 +1,16 @@
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/config/WebSocketConfig.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/repository/QuickLinkRepository.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/service/ClassService.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/ClassServiceApplication.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/repository/ClassRepository.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/controller/QueryController.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/service/QueryService.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/model/Class.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/service/JwtService.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/controller/MeetingController.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/repository/QueryRepository.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/service/QuickLinkService.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/controller/QuickLinkController.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/controller/ClassController.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/model/QuickLink.java
+/home/abhijeet/Desktop/learnsphere/Backend/class-service/src/main/java/com/learnsphere/class_service/model/Query.java
