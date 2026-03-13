@@ -3,24 +3,31 @@ package com.learnsphere.ai.service;
 import com.learnsphere.ai.dto.GradingResponse;
 import com.learnsphere.ai.dto.PdfGradingRequest;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
 public class PdfGradingService {
 
-    @Autowired
-    private ChatModel chatModel;
+    private final ChatModel chatModel;
 
     @Autowired
     private PdfProcessingService pdfProcessingService;
 
-    public GradingResponse gradePdfSubmission(PdfGradingRequest request) {
+    @Autowired
+    public PdfGradingService(ChatModel chatModel) {
+        this.chatModel = chatModel;
+    }
+
+    public GradingResponse gradePdf(PdfGradingRequest request) {
         try {
             // Extract text from reference material PDF
             String referenceText = pdfProcessingService.extractTextFromPdf(request.getReferenceMaterialPath());
@@ -28,65 +35,70 @@ public class PdfGradingService {
             // Extract text from student submission PDF
             String studentText = pdfProcessingService.extractTextFromPdf(request.getStudentSubmissionPath());
 
-            // Build grading prompt with context
-            String prompt = buildPdfGradingPrompt(referenceText, studentText, request);
+            // Build grading prompt with context using PromptTemplate
+            String promptTemplateString = """
+                    You are an expert teacher grading a student's PDF submission.
+                    Use the provided reference material as context to evaluate the student's work.
 
-            // Get AI response
-            String response = chatModel.call(prompt);
+                    REFERENCE MATERIAL (Context for grading):
+                    ---
+                    {referenceMaterial}
+                    ---
+
+                    STUDENT SUBMISSION:
+                    ---
+                    {studentSubmission}
+                    ---
+
+                    {rubricSection}
+
+                    Maximum Points: {maxPoints}
+
+                    Please evaluate the student's submission based on:
+                    1. How well it addresses the reference material
+                    2. Accuracy and completeness
+                    3. Understanding demonstrated
+                    4. Quality of work
+
+                    Provide your evaluation in the following JSON format:
+                    {lb}
+                      "suggestedScore": (integer between 0 and {maxPoints}),
+                      "feedback": "(overall feedback)",
+                      "feedbackItems": ["(item1)", "(item2)", "..."],
+                      "reasoning": "(brief explanation of the score)"
+                    {rb}
+                    Be thorough and fair in your evaluation.
+                    """;
+
+            String rubricSection = "";
+            if (request.getRubric() != null && !request.getRubric().isEmpty()) {
+                rubricSection = "GRADING RUBRIC:\\n" + request.getRubric() + "\\n\\n";
+            }
+
+            int maxPoints = request.getMaxPoints() != null ? request.getMaxPoints() : 100;
+
+            PromptTemplate template = new PromptTemplate(promptTemplateString);
+            Prompt prompt = template.create(Map.of(
+                    "referenceMaterial", referenceText.substring(0, Math.min(referenceText.length(), 5000)),
+                    "studentSubmission", studentText.substring(0, Math.min(studentText.length(), 5000)),
+                    "rubricSection", rubricSection,
+                    "maxPoints", maxPoints,
+                    "lb", "{",
+                    "rb", "}"));
+
+            String jsonResponse = chatModel.call(prompt).getResult().getOutput().getText();
 
             // Parse and return grading response
-            return parseGradingResponse(response, request.getMaxPoints());
+            return parseGradingResponse(jsonResponse, request.getMaxPoints());
 
         } catch (Exception e) {
-            throw new RuntimeException("Error grading PDF submission: " + e.getMessage(), e);
+            e.printStackTrace(); // Log the error
+            GradingResponse errorResponse = new GradingResponse();
+            errorResponse.setSuggestedScore(0);
+            errorResponse.setFeedback("Error grading PDF submission: " + e.getMessage());
+            errorResponse.setFeedbackItems(new ArrayList<>());
+            return errorResponse;
         }
-    }
-
-    private String buildPdfGradingPrompt(String referenceText, String studentText, PdfGradingRequest request) {
-        StringBuilder prompt = new StringBuilder();
-        prompt.append("You are an expert teacher grading a student's PDF submission. ");
-        prompt.append("Use the provided reference material as context to evaluate the student's work.\n\n");
-
-        prompt.append("REFERENCE MATERIAL (Context for grading):\n");
-        prompt.append("---\n");
-        prompt.append(referenceText.substring(0, Math.min(referenceText.length(), 5000))); // Limit context size
-        if (referenceText.length() > 5000) {
-            prompt.append("\n... (truncated for length)");
-        }
-        prompt.append("\n---\n\n");
-
-        prompt.append("STUDENT SUBMISSION:\n");
-        prompt.append("---\n");
-        prompt.append(studentText.substring(0, Math.min(studentText.length(), 5000))); // Limit context size
-        if (studentText.length() > 5000) {
-            prompt.append("\n... (truncated for length)");
-        }
-        prompt.append("\n---\n\n");
-
-        if (request.getRubric() != null && !request.getRubric().isEmpty()) {
-            prompt.append("GRADING RUBRIC:\n");
-            prompt.append(request.getRubric()).append("\n\n");
-        }
-
-        int maxPoints = request.getMaxPoints() != null ? request.getMaxPoints() : 100;
-        prompt.append("Maximum Points: ").append(maxPoints).append("\n\n");
-
-        prompt.append("Please evaluate the student's submission based on:\n");
-        prompt.append("1. How well it addresses the reference material\n");
-        prompt.append("2. Accuracy and completeness\n");
-        prompt.append("3. Understanding demonstrated\n");
-        prompt.append("4. Quality of work\n\n");
-
-        prompt.append("Provide your evaluation in the following JSON format:\n");
-        prompt.append("{\n");
-        prompt.append("  \"suggestedScore\": <integer between 0 and ").append(maxPoints).append(">,\n");
-        prompt.append("  \"feedback\": \"<overall feedback>\",\n");
-        prompt.append("  \"feedbackItems\": [\"<item1>\", \"<item2>\", ...],\n");
-        prompt.append("  \"reasoning\": \"<brief explanation of the score>\"\n");
-        prompt.append("}\n\n");
-        prompt.append("Be thorough and fair in your evaluation.");
-
-        return prompt.toString();
     }
 
     private GradingResponse parseGradingResponse(String response, Integer maxPoints) {

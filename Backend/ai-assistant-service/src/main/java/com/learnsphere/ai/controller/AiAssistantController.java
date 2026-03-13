@@ -1,75 +1,93 @@
 package com.learnsphere.ai.controller;
 
-import com.learnsphere.ai.dto.*;
+import com.learnsphere.ai.service.AiDetectionService;
 import com.learnsphere.ai.service.AiGradingService;
+import com.learnsphere.ai.service.ChatService;
 import com.learnsphere.ai.service.PdfGradingService;
 import com.learnsphere.ai.service.QuestionGenerationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/ai")
-@CrossOrigin(origins = "*")
 public class AiAssistantController {
-    
+
+    private final ChatService chatService;
+    private final AiDetectionService aiDetectionService;
+    private final AiGradingService aiGradingService;
+    private final PdfGradingService pdfGradingService;
+    private final QuestionGenerationService questionGenerationService;
+
     @Autowired
-    private AiGradingService aiGradingService;
-    
-    @Autowired
-    private QuestionGenerationService questionGenerationService;
-    
-    @Autowired
-    private PdfGradingService pdfGradingService;
-    
-    /**
-     * AI Grading Assistant - Grade a submission based on question and answer
-     * POST /api/ai/grade
-     */
-    @PostMapping("/grade")
-    public ResponseEntity<GradingResponse> gradeSubmission(@RequestBody GradingRequest request) {
-        try {
-            GradingResponse response = aiGradingService.gradeSubmission(request);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+    public AiAssistantController(AiDetectionService aiDetectionService, ChatService chatService,
+            AiGradingService aiGradingService, PdfGradingService pdfGradingService,
+            QuestionGenerationService questionGenerationService) {
+        this.aiDetectionService = aiDetectionService;
+        this.chatService = chatService;
+        this.aiGradingService = aiGradingService;
+        this.pdfGradingService = pdfGradingService;
+        this.questionGenerationService = questionGenerationService;
     }
-    
-    /**
-     * Assignment Generation - Generate questions for an assignment
-     * POST /api/ai/generate-questions
-     */
+
+    @PostMapping("/chat")
+    public ResponseEntity<String> chat(@RequestBody Map<String, Object> request) {
+        String query = (String) request.get("query");
+        @SuppressWarnings("unchecked")
+        List<String> allowedClassIds = (List<String>) request.get("allowedClassIds");
+
+        if (query == null || query.isEmpty()) {
+            return ResponseEntity.badRequest().body("Query is required");
+        }
+
+        String response = chatService.chat(query, allowedClassIds);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/ingest")
+    public ResponseEntity<String> ingest(@RequestBody com.learnsphere.ai.dto.DataIngestionRequest request) {
+        if (request.getClassId() == null || request.getClassId().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("classId is required");
+        }
+
+        chatService.ingestDocument(request);
+        return ResponseEntity.ok("Document ingested successfully for class: " + request.getClassId());
+    }
+
+    @PostMapping("/detect")
+    public ResponseEntity<String> detect(@RequestBody Map<String, String> request) {
+        String text = request.get("text");
+
+        if (text == null || text.isEmpty()) {
+            return ResponseEntity.badRequest().body("Text is required");
+        }
+
+        String analysis = aiDetectionService.detectAiContent(text);
+        return ResponseEntity.ok(analysis);
+    }
+
     @PostMapping("/generate-questions")
-    public ResponseEntity<QuestionGenerationResponse> generateQuestions(@RequestBody QuestionGenerationRequest request) {
-        try {
-            QuestionGenerationResponse response = questionGenerationService.generateQuestions(request);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+    public ResponseEntity<com.learnsphere.ai.dto.QuestionGenerationResponse> generateQuestions(
+            @RequestBody com.learnsphere.ai.dto.QuestionGenerationRequest request) {
+        com.learnsphere.ai.dto.QuestionGenerationResponse response = questionGenerationService
+                .generateQuestions(request);
+        return ResponseEntity.ok(response);
     }
-    
-    /**
-     * PDF Grading with Context - Grade a PDF submission using reference material
-     * POST /api/ai/grade-pdf
-     */
+
+    @PostMapping("/grade")
+    public ResponseEntity<com.learnsphere.ai.dto.GradingResponse> gradeAssignment(
+            @RequestBody com.learnsphere.ai.dto.GradingRequest request) {
+        com.learnsphere.ai.dto.GradingResponse response = aiGradingService.gradeAssignment(request);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/grade-pdf")
-    public ResponseEntity<GradingResponse> gradePdfSubmission(@RequestBody PdfGradingRequest request) {
-        try {
-            GradingResponse response = pdfGradingService.gradePdfSubmission(request);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-    
-    /**
-     * Health check endpoint
-     */
-    @GetMapping("/health")
-    public ResponseEntity<String> health() {
-        return ResponseEntity.ok("AI Assistant Service is running");
+    public ResponseEntity<com.learnsphere.ai.dto.GradingResponse> gradePdf(
+            @RequestBody com.learnsphere.ai.dto.PdfGradingRequest request) {
+        com.learnsphere.ai.dto.GradingResponse response = pdfGradingService.gradePdf(request);
+        return ResponseEntity.ok(response);
     }
 }
-

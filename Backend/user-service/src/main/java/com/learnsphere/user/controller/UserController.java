@@ -16,7 +16,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -49,7 +48,7 @@ public class UserController {
 
     @Autowired
     private AuthenticationManager authenticationManager;
-    
+
     @Autowired
     private FileStorageService fileStorageService;
 
@@ -123,26 +122,26 @@ public class UserController {
         try {
             String email = loginRequest.get("email");
             String password = loginRequest.get("password");
-            
+
             if (email == null || password == null) {
                 Map<String, String> response = new HashMap<>();
                 response.put("error", "Email and password are required");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             logger.info("Attempting login for email: {}", email);
-            
+
             User user;
             try {
                 user = userService.findByEmail(email);
                 logger.info("User found in database: {}", user.getUsername());
-            } catch (Exception e) {	
+            } catch (Exception e) {
                 logger.error("User not found in database with email: {}", email);
                 Map<String, String> response = new HashMap<>();
                 response.put("error", "User not found");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             Authentication authentication = authenticationManager
                     .authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), password));
 
@@ -162,7 +161,7 @@ public class UserController {
                 response.put("error", "Authentication failed");
                 return ResponseEntity.badRequest().body(response);
             }
-        } catch (Exception e) {		
+        } catch (Exception e) {
             logger.error("Login error: {}", e.getMessage());
             Map<String, String> response = new HashMap<>();
             response.put("error", "Invalid credentials");
@@ -185,7 +184,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     @PostMapping("/update")
     public ResponseEntity<?> updateProfile(@RequestBody User user) {
         try {
@@ -210,7 +209,7 @@ public class UserController {
             String token = authHeader.replace("Bearer ", "");
             String currentUsername = jwtService.extractUsername(token);
             User user = userService.findByUsername(currentUsername);
-            
+
             if (username != null && !username.trim().isEmpty()) {
                 if (!username.equals(currentUsername) && userService.existsByUsername(username)) {
                     Map<String, String> response = new HashMap<>();
@@ -219,7 +218,7 @@ public class UserController {
                 }
                 user.setUsername(username);
             }
-            
+
             if (profilePicture != null && !profilePicture.isEmpty()) {
                 try {
                     List<MultipartFile> files = List.of(profilePicture);
@@ -234,7 +233,7 @@ public class UserController {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
                 }
             }
-            
+
             User updatedUser = userService.save(user);
             return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
@@ -246,7 +245,8 @@ public class UserController {
     }
 
     @PostMapping("/update-role")
-    public ResponseEntity<?> updateRole(@AuthenticationPrincipal UserDetails userDetails, @RequestBody Map<String, String> payload) {
+    public ResponseEntity<?> updateRole(@AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, String> payload) {
         try {
             String role = payload.get("role");
             logger.info("Updating role for user: {} to {}", userDetails.getUsername(), role);
@@ -268,4 +268,3 @@ public class UserController {
         }
     }
 }
-

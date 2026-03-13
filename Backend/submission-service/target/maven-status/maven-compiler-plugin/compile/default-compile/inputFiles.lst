@@ -6,4 +6,5 @@
 /home/abhijeet/Desktop/learnsphere/Backend/submission-service/src/main/java/com/learnsphere/submission/dto/Attachment.java
 /home/abhijeet/Desktop/learnsphere/Backend/submission-service/src/main/java/com/learnsphere/submission/controller/SubmissionController.java
 /home/abhijeet/Desktop/learnsphere/Backend/submission-service/src/main/java/com/learnsphere/submission/repository/SubmissionRepository.java
+/home/abhijeet/Desktop/learnsphere/Backend/submission-service/src/main/java/com/learnsphere/submission/client/FileServiceClient.java
 /home/abhijeet/Desktop/learnsphere/Backend/submission-service/src/main/java/com/learnsphere/submission/SubmissionServiceApplication.java

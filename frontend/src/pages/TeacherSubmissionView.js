@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
+import { getDownloadUrl } from '../utils/urlHelper';
 
 // Teacher View for Assignment Submissions
 function TeacherSubmissionView() {
@@ -59,18 +60,18 @@ function TeacherSubmissionView() {
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
 
-                console.log('Submissions data:', submissionsRes.data);   
+                console.log('Submissions data:', submissionsRes.data);
                 // Handle both array and single object responses
                 const submissionsData = submissionsRes.data || [];
                 const submissionsArray = Array.isArray(submissionsData) ? submissionsData : [submissionsData];
                 setSubmissions(submissionsArray);
-                
+
                 // Also need student list to show who hasn't submitted.
                 // let's fetch students of the class.
                 const rawStudentIds = classRes.data.studentIds || [];
                 const studentIds = [...new Set(rawStudentIds)]; // Deduplicate IDs
                 console.log('Student IDs from class:', studentIds);
-                
+
                 const studentPromises = studentIds.map(id =>
                     axios.get(`http://localhost:8080/api/users/student/${id}`, { headers: { Authorization: `Bearer ${token}` } })
                         .catch(err => {
@@ -80,7 +81,7 @@ function TeacherSubmissionView() {
                 );
 
                 const studentsResults = await Promise.allSettled(studentPromises);
-                
+
                 // Debug: log each result to see what's being returned
                 console.log('Students fetch results:', studentsResults.map((result, idx) => ({
                     index: idx,
@@ -110,7 +111,7 @@ function TeacherSubmissionView() {
 
                 console.log('Valid students:', validStudents);
                 console.log('Submissions studentIds:', (submissionsRes.data || []).map(s => s.studentId));
-                
+
                 setStudents(validStudents);
 
             } catch (err) {
@@ -148,10 +149,10 @@ function TeacherSubmissionView() {
             alert('File URL is not available');
             return;
         }
-        
-        const fullUrl = `http://localhost:8080${fileUrl}`;
+
+        const fullUrl = getDownloadUrl(fileUrl);
         console.log('Downloading file:', fullUrl, 'FileName:', fileName);
-        
+
         // Try to download the file - if it fails, the backend will show an error
         // The user will see the error page if file doesn't exist
         const link = document.createElement('a');
@@ -244,8 +245,8 @@ function TeacherSubmissionView() {
                                     </tr>
                                 ) : filteredStudents.map(student => {
                                     const submission = getStudentSubmission(student.id);
-                                    const isLate = submission && assignment?.dueDate && submission.submissionDate 
-                                        ? new Date(submission.submissionDate) > new Date(assignment.dueDate) 
+                                    const isLate = submission && assignment?.dueDate && submission.submissionDate
+                                        ? new Date(submission.submissionDate) > new Date(assignment.dueDate)
                                         : false;
 
                                     return (
@@ -383,7 +384,7 @@ function TeacherSubmissionView() {
                                             try {
                                                 const questionText = assignment?.questions?.[0]?.text || 'Evaluate this submission';
                                                 const studentAnswer = selectedSubmission.content || selectedSubmission.questionAnswers?.[Object.keys(selectedSubmission.questionAnswers || {})[0]] || '';
-                                                
+
                                                 const response = await axios.post(
                                                     'http://localhost:8080/api/ai/grade',
                                                     {
@@ -560,10 +561,10 @@ function TeacherSubmissionView() {
                                                 if (!studentPdf) {
                                                     throw new Error('No PDF found in submission');
                                                 }
-                                                
+
                                                 // Extract filename from fileUrl
                                                 const studentPdfPath = studentPdf.fileUrl.split('/').pop();
-                                                
+
                                                 const response = await axios.post(
                                                     'http://localhost:8080/api/ai/grade-pdf',
                                                     {

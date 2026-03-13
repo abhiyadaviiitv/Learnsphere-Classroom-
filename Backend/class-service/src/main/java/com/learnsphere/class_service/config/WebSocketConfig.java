@@ -19,10 +19,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                // Use setAllowedOriginPatterns to allow CORS (gateway will also add headers, but this is needed for SockJS)
-                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 }
-
-

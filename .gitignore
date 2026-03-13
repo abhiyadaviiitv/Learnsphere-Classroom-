@@ -7,3 +7,7 @@ node_modules/
 build/
 uploads/
 .DS_Store
+*.lst
+*.txt
+.gitignore
+*.yml

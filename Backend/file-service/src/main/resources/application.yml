@@ -33,4 +33,9 @@ logging:
   level:
     com.learnsphere.file: DEBUG
 
-
+# AWS Configuration
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET_NAME:learnsphere-files1}
+    region: ${AWS_REGION:eu-north-1}
+    # Note: Access keys will be picked up via environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) by default

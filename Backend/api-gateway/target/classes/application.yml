@@ -108,7 +108,7 @@ spring:
             - Path=/ws/**
           filters:
             - StripPrefix=0
-        
+      
         # AI Assistant Service Routes
         - id: ai-assistant-service
           uri: lb://ai-assistant-service

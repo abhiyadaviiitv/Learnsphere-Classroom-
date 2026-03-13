@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
+import { getDownloadUrl } from '../utils/urlHelper';
 
 function AssignmentDisplay() {
     const { assignmentid, assignmentId } = useParams();
@@ -176,7 +177,7 @@ function AssignmentDisplay() {
     };
 
     const downloadFile = (fileUrl, fileName) => {
-        const fullUrl = `http://localhost:8080${fileUrl}`;
+        const fullUrl = getDownloadUrl(fileUrl);
         window.open(fullUrl, '_blank');
     };
 
@@ -238,8 +239,8 @@ function AssignmentDisplay() {
                         <button
                             onClick={() => setActiveTab('details')}
                             className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === 'details'
-                                    ? 'text-primary-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'text-primary-600'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             Assignment Details
@@ -250,8 +251,8 @@ function AssignmentDisplay() {
                         <button
                             onClick={() => setActiveTab('work')}
                             className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === 'work'
-                                    ? 'text-primary-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'text-primary-600'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             My Work & Score

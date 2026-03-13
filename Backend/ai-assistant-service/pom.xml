@@ -21,7 +21,7 @@
     <properties>
         <java.version>21</java.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
-        <spring-ai.version>1.0.0-M4</spring-ai.version>
+        <spring-ai.version>1.1.2</spring-ai.version>
     </properties>
     
     <repositories>
@@ -32,6 +32,18 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
+        </repository>
+        <repository>
+            <id>spring-releases</id>
+            <name>Spring Releases</name>
+            <url>https://repo.spring.io/release</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
         </repository>
     </repositories>
     
@@ -46,14 +58,36 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         
-        <!-- Spring AI -->
+        <!-- Spring AI - Google AI Gemini -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
+            <artifactId>spring-ai-starter-model-google-genai</artifactId>
             <version>${spring-ai.version}</version>
         </dependency>
-        
-        <!-- Apache PDFBox for PDF processing -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-google-genai-embedding</artifactId>
+            <version>${spring-ai.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-vector-store</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-client-chat</artifactId>
+        </dependency>
+
+        <!-- Vector Store (Simple In-Memory for Dev) -->
+        <!-- <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-spring-boot-starter</artifactId>
+            <version>${spring-ai.version}</version>
+        </dependency> -->
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
@@ -73,28 +107,42 @@
             <optional>true</optional>
         </dependency>
         
+        <!-- AWS S3 SDK -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>2.20.160</version>
+        </dependency>
+        
         <!-- Jackson for JSON -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+        
+        <!-- Force newer Guava version to resolve conflict with Google AI SDK -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.1.0-jre</version>
+        </dependency>
     </dependencies>
     
     <dependencyManagement>
         <dependencies>
-            <!-- Spring AI BOM -->
-            <dependency>
-                <groupId>org.springframework.ai</groupId>
-                <artifactId>spring-ai-bom</artifactId>
-                <version>${spring-ai.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
             <!-- Spring Cloud -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
                 <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Spring AI BOM -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

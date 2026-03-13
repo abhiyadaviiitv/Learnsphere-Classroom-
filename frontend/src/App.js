@@ -17,6 +17,7 @@ import TeacherDashboard from './pages/TeacherDashboard';
 import TeacherAnalytics from './pages/TeacherAnalytics';
 import TeacherSubmissionView from './pages/TeacherSubmissionView';
 import RoleSelection from './pages/RoleSelection';
+import ChatBot from './components/ChatBot';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -30,7 +31,12 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/" replace />;
+  return isAuthenticated ? (
+    <>
+      {children}
+      <ChatBot />
+    </>
+  ) : <Navigate to="/" replace />;
 };
 
 

@@ -124,8 +124,8 @@ const LandingPage = () => {
         animate={{ y: 0 }}
         transition={{ duration: 0.5 }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-            ? 'bg-white/95 backdrop-blur-md shadow-sm'
-            : 'bg-slate-800/50 backdrop-blur-sm'
+          ? 'bg-white/95 backdrop-blur-md shadow-sm'
+          : 'bg-slate-800/50 backdrop-blur-sm'
           }`}
       >
         <div className="container mx-auto px-6 py-4">
@@ -133,8 +133,8 @@ const LandingPage = () => {
             {/* Logo */}
             <div className="flex items-center gap-2">
               <div className={`p-2 rounded-lg transition-colors ${scrolled
-                  ? 'bg-gradient-to-br from-blue-500 to-purple-600'
-                  : 'bg-gradient-to-br from-orange-500 to-yellow-400'
+                ? 'bg-gradient-to-br from-blue-500 to-purple-600'
+                : 'bg-gradient-to-br from-orange-500 to-yellow-400'
                 }`}>
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
@@ -167,8 +167,8 @@ const LandingPage = () => {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/register')}
                 className={`px-6 py-2 rounded-lg font-medium transition-all ${scrolled
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-orange-500 text-white hover:bg-orange-600'
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-orange-500 text-white hover:bg-orange-600'
                   }`}
               >
                 Get Started
@@ -209,17 +209,11 @@ const LandingPage = () => {
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Video Background */}
         <div className="absolute inset-0 z-0">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-          >
-            <source src="/63328-506377472 (1).mp4" type="video/mp4" />
+          <video autoPlay loop muted playsInline className="background-video">
+            <source src="https://learnsphere-files1.s3.eu-north-1.amazonaws.com/63328-506377472.mp4" type="video/mp4" />
           </video>
-          {/* Dark Green Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-800/90 via-slate-700/85 to-slate-800/90" />
+          {/* Dark Overlay - Adjusted for better video visibility */}
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" />
         </div>
 
 

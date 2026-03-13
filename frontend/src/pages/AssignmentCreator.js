@@ -36,10 +36,10 @@ function AssignmentCreator() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const token = localStorage.getItem('token');
-  
+
   const [activeStep, setActiveStep] = useState(0);
   const steps = ['Basic Information', 'Content & Resources', 'Review & Publish'];
-  
+
   // Form state - using individual state to prevent unnecessary re-renders
   const [title, setTitle] = useState('');
   const [type, setType] = useState('');
@@ -55,7 +55,7 @@ function AssignmentCreator() {
   const [showPointsToStudents, setShowPointsToStudents] = useState(true);
   const [allowAttachments, setAllowAttachments] = useState(true);
   const [allowComments, setAllowComments] = useState(true);
-  
+
   // Validation state - only update on blur, not on every keystroke
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -74,8 +74,8 @@ function AssignmentCreator() {
   // Memoized validation - only runs when needed
   const validateField = useCallback((field, value) => {
     const newErrors = { ...errors };
-    
-    switch(field) {
+
+    switch (field) {
       case 'title':
         if (!value || value.trim() === '') {
           newErrors.title = 'Title is required';
@@ -118,14 +118,14 @@ function AssignmentCreator() {
       default:
         break;
     }
-    
+
     setErrors(newErrors);
     return !newErrors[field];
   }, [errors, dueDate, dueTime]);
 
   // Handle field changes - NO validation on change, only update state
   const handleFieldChange = useCallback((field, value) => {
-    switch(field) {
+    switch (field) {
       case 'title': setTitle(value); break;
       case 'type': setType(value); break;
       case 'points': setPoints(value); break;
@@ -141,33 +141,33 @@ function AssignmentCreator() {
   // Validate on blur - prevents re-rendering during typing
   const handleFieldBlur = useCallback((field) => {
     setTouched(prev => ({ ...prev, [field]: true }));
-    const value = 
+    const value =
       field === 'title' ? title :
-      field === 'type' ? type :
-      field === 'points' ? points :
-      field === 'dueDate' ? dueDate : '';
+        field === 'type' ? type :
+          field === 'points' ? points :
+            field === 'dueDate' ? dueDate : '';
     validateField(field, value);
   }, [title, type, points, dueDate, validateField]);
 
   const validateStep = useCallback(() => {
-    const fieldsToValidate = activeStep === 0 
-      ? ['title', 'type', 'points', 'dueDate'] 
+    const fieldsToValidate = activeStep === 0
+      ? ['title', 'type', 'points', 'dueDate']
       : [];
-    
+
     let isValid = true;
     const newTouched = { ...touched };
-    
+
     fieldsToValidate.forEach(field => {
       newTouched[field] = true;
-      const value = 
+      const value =
         field === 'title' ? title :
-        field === 'type' ? type :
-        field === 'points' ? points :
-        field === 'dueDate' ? dueDate : '';
-      
+          field === 'type' ? type :
+            field === 'points' ? points :
+              field === 'dueDate' ? dueDate : '';
+
       isValid = isValid && validateField(field, value);
     });
-    
+
     setTouched(newTouched);
     return isValid;
   }, [activeStep, title, type, points, dueDate, touched, validateField]);
@@ -177,20 +177,20 @@ function AssignmentCreator() {
       setActiveStep(prev => prev + 1);
     }
   };
-  
+
   const handleBack = () => setActiveStep(prev => prev - 1);
   const handleConfirmLeave = () => navigate(`/teacher/class/${classId}`);
 
   const handleQuestionChange = useCallback((id, field, value) => {
-    setQuestions(prev => prev.map(q => 
+    setQuestions(prev => prev.map(q =>
       q.id === id ? { ...q, [field]: value } : q
     ));
   }, []);
 
   const handleAddQuestion = () => {
-    setQuestions(prev => [...prev, { 
-      id: Math.max(0, ...prev.map(q => q.id)) + 1, 
-      text: '', 
+    setQuestions(prev => [...prev, {
+      id: Math.max(0, ...prev.map(q => q.id)) + 1,
+      text: '',
       points: 5,
       expectedAnswer: ''
     }]);
@@ -203,14 +203,14 @@ function AssignmentCreator() {
   };
 
   const handleFileUpload = (e) => {
-    const newFiles = Array.from(e.target.files).filter(file => 
+    const newFiles = Array.from(e.target.files).filter(file =>
       file.type === 'application/pdf' && file.size <= 10 * 1024 * 1024
     );
-    
+
     if (newFiles.length !== e.target.files.length) {
       setSubmitError('Only PDF files under 10MB are allowed');
     }
-    
+
     setFiles(prev => [...prev, ...newFiles]);
   };
 
@@ -267,7 +267,7 @@ function AssignmentCreator() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar classes={[]} userRole="TEACHER" />
-      
+
       <main className="flex-1 ml-64 p-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
@@ -286,25 +286,22 @@ function AssignmentCreator() {
             {steps.map((step, index) => (
               <React.Fragment key={index}>
                 <div className="flex items-center">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
-                    index === activeStep 
-                      ? 'bg-primary-500 text-white' 
-                      : index < activeStep 
-                      ? 'bg-success-500 text-white' 
-                      : 'bg-gray-200 text-gray-600'
-                  }`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${index === activeStep
+                      ? 'bg-primary-500 text-white'
+                      : index < activeStep
+                        ? 'bg-success-500 text-white'
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
                     {index < activeStep ? <CheckCircle2 className="w-6 h-6" /> : index + 1}
                   </div>
-                  <span className={`ml-3 font-medium ${
-                    index === activeStep ? 'text-primary-600' : index < activeStep ? 'text-success-600' : 'text-gray-500'
-                  }`}>
+                  <span className={`ml-3 font-medium ${index === activeStep ? 'text-primary-600' : index < activeStep ? 'text-success-600' : 'text-gray-500'
+                    }`}>
                     {step}
                   </span>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className={`flex-1 h-1 mx-4 ${
-                    index < activeStep ? 'bg-success-500' : 'bg-gray-200'
-                  }`} />
+                  <div className={`flex-1 h-1 mx-4 ${index < activeStep ? 'bg-success-500' : 'bg-gray-200'
+                    }`} />
                 )}
               </React.Fragment>
             ))}
@@ -571,7 +568,7 @@ function AssignmentCreator() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2 text-gray-600 mb-4">
                   <Calendar className="w-4 h-4" />
                   <span>Due: {dueDate && dueTime ? `${new Date(`${dueDate}T${dueTime}`).toLocaleString()}` : 'Not set'}</span>
@@ -752,7 +749,7 @@ function AssignmentCreator() {
               <Dialog.Description className="text-gray-600 mb-6">
                 Let AI help you create questions for your assignment based on a topic.
               </Dialog.Description>
-              
+
               <div className="space-y-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -767,7 +764,7 @@ function AssignmentCreator() {
                     disabled={isGenerating}
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -784,7 +781,7 @@ function AssignmentCreator() {
                       <option value="hard">Hard</option>
                     </select>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Number of Questions
@@ -800,7 +797,7 @@ function AssignmentCreator() {
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Question Type
@@ -818,14 +815,14 @@ function AssignmentCreator() {
                   </select>
                 </div>
               </div>
-              
+
               {isGenerating && (
                 <div className="mb-6 p-4 bg-primary-50 rounded-lg flex items-center gap-3">
                   <Loader2 className="w-5 h-5 text-primary-600 animate-spin" />
                   <span className="text-primary-700">Generating questions with AI...</span>
                 </div>
               )}
-              
+
               {generatedQuestions.length > 0 && (
                 <div className="mb-6">
                   <h4 className="font-semibold text-gray-900 mb-3">Generated Questions</h4>
@@ -857,7 +854,7 @@ function AssignmentCreator() {
                   </div>
                 </div>
               )}
-              
+
               <div className="flex gap-3">
                 <Dialog.Close asChild>
                   <button className="btn-ghost flex-1" disabled={isGenerating}>Cancel</button>
@@ -871,6 +868,7 @@ function AssignmentCreator() {
                     setIsGenerating(true);
                     setGeneratedQuestions([]);
                     try {
+                      // Note: We're using the centralized spring ai endpoint configured previously
                       const response = await axios.post(
                         'http://localhost:8080/api/ai/generate-questions',
                         {
@@ -889,6 +887,7 @@ function AssignmentCreator() {
                       setGeneratedQuestions(response.data.questions || []);
                     } catch (err) {
                       console.error('Error generating questions:', err);
+                      // Set an error state or display alert
                       alert('Failed to generate questions. Please try again.');
                     } finally {
                       setIsGenerating(false);
@@ -912,19 +911,29 @@ function AssignmentCreator() {
                 {generatedQuestions.length > 0 && (
                   <button
                     onClick={() => {
+                      // Only keep the default empty question if it's the only one and it's empty
+                      const hasOnlyEmptyDefault = questions.length === 1 && !questions[0].text && !questions[0].expectedAnswer;
+
                       const newQuestions = generatedQuestions.map((q, idx) => ({
                         id: Date.now() + idx,
                         text: q.question,
                         points: q.points || 10,
                         expectedAnswer: q.correctAnswer || ''
                       }));
-                      setQuestions([...questions, ...newQuestions]);
+
+                      if (hasOnlyEmptyDefault) {
+                        setQuestions(newQuestions);
+                      } else {
+                        setQuestions(prev => [...prev, ...newQuestions]);
+                      }
+
                       setAiDialogOpen(false);
                       setGeneratedQuestions([]);
                       setAiTopic('');
                     }}
-                    className="btn-primary flex-1 bg-success-500 hover:bg-success-600"
+                    className="btn-primary flex-1 bg-success-500 hover:bg-success-600 flex items-center justify-center gap-2"
                   >
+                    <Plus className="w-4 h-4" />
                     Add to Assignment
                   </button>
                 )}

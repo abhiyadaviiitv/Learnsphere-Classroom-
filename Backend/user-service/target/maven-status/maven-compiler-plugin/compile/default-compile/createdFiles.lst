@@ -2,6 +2,7 @@ com/learnsphere/user/controller/UserController.class
 com/learnsphere/user/filter/JwtFilter.class
 com/learnsphere/user/service/UserDetailsServiceImpl.class
 com/learnsphere/user/service/FileStorageService.class
+com/learnsphere/user/client/FileServiceClient.class
 com/learnsphere/user/UserServiceApplication.class
 com/learnsphere/user/config/OAuth2FailureHandler.class
 com/learnsphere/user/service/UserService.class

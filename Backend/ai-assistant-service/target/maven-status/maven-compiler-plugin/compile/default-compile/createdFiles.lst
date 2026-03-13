@@ -1,0 +1,17 @@
+com/learnsphere/ai/dto/QuestionGenerationRequest.class
+com/learnsphere/ai/service/PdfProcessingService.class
+com/learnsphere/ai/dto/PdfGradingRequest.class
+com/learnsphere/ai/dto/QuestionGenerationResponse$GeneratedQuestion.class
+com/learnsphere/ai/config/AwsConfig.class
+com/learnsphere/ai/service/AiDetectionService.class
+com/learnsphere/ai/service/ChatService.class
+com/learnsphere/ai/dto/QuestionGenerationResponse.class
+com/learnsphere/ai/dto/GradingResponse.class
+com/learnsphere/ai/service/PdfGradingService.class
+com/learnsphere/ai/service/AiGradingService.class
+com/learnsphere/ai/AiAssistantServiceApplication.class
+com/learnsphere/ai/service/QuestionGenerationService.class
+com/learnsphere/ai/config/RagConfiguration.class
+com/learnsphere/ai/dto/DataIngestionRequest.class
+com/learnsphere/ai/controller/AiAssistantController.class
+com/learnsphere/ai/dto/GradingRequest.class

@@ -1,16 +1,22 @@
 spring:
   application:
     name: ai-assistant-service
+  autoconfigure:
+    exclude: 
+      - org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleGenAiEmbeddingConnectionAutoConfiguration
+      - org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleGenAiTextEmbeddingAutoConfiguration
   
-  # Spring AI Configuration
+  # Spring AI Configuration - Google GenAI (AI Studio)
   ai:
-    openai:
-      api-key: ${OPENAI_API_KEY:your-openai-api-key-here}
-      chat:
-        options:
-          model: gpt-4o-mini
-          temperature: 0.7
-          max-tokens: 2000
+    google:
+      genai:
+        api-key: ${SPRING_AI_GOOGLE_GENAI_API_KEY:${AIzaSyBowlX8A-ah7W8K2IkX9Pwc4mR1wtup2fY}}
+        chat:
+          options:
+            model: gemini-1.5-flash
+            temperature: 0.7
+  
+  # OpenAI / HuggingFace options can be added here if needed
   
   servlet:
     multipart:

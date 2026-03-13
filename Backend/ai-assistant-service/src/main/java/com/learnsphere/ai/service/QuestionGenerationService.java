@@ -3,56 +3,81 @@ package com.learnsphere.ai.service;
 import com.learnsphere.ai.dto.QuestionGenerationRequest;
 import com.learnsphere.ai.dto.QuestionGenerationResponse;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
 public class QuestionGenerationService {
 
+    private final ChatModel chatModel;
+
     @Autowired
-    private ChatModel chatModel;
-
-    public QuestionGenerationResponse generateQuestions(QuestionGenerationRequest request) {
-        String prompt = buildQuestionGenerationPrompt(request);
-        String response = chatModel.call(prompt);
-
-        return parseQuestionResponse(response);
+    public QuestionGenerationService(ChatModel chatModel) {
+        this.chatModel = chatModel;
     }
 
-    private String buildQuestionGenerationPrompt(QuestionGenerationRequest request) {
-        StringBuilder prompt = new StringBuilder();
-        prompt.append("You are an expert educator creating assignment questions. ");
-        prompt.append("Generate high-quality questions based on the following requirements:\n\n");
+    public QuestionGenerationResponse generateQuestions(QuestionGenerationRequest request) {
+        try {
+            String promptText = """
+                    You are an educational content creator.
 
-        prompt.append("TOPIC: ").append(request.getTopic()).append("\n");
-        prompt.append("DIFFICULTY: ").append(request.getDifficulty() != null ? request.getDifficulty() : "medium")
-                .append("\n");
-        prompt.append("NUMBER OF QUESTIONS: ")
-                .append(request.getNumberOfQuestions() != null ? request.getNumberOfQuestions() : 5).append("\n");
-        prompt.append("QUESTION TYPE: ").append(request.getQuestionType() != null ? request.getQuestionType() : "mixed")
-                .append("\n\n");
+                    TASK: Generate {count} {difficulty} questions about {topic_or_resource}.
 
-        prompt.append("Please generate questions in the following JSON format:\n");
-        prompt.append("{\n");
-        prompt.append("  \"questions\": [\n");
-        prompt.append("    {\n");
-        prompt.append("      \"question\": \"<question text>\",\n");
-        prompt.append("      \"type\": \"<multiple-choice|short-answer|essay>\",\n");
-        prompt.append("      \"options\": [\"<option1>\", \"<option2>\", ...], // Only for multiple-choice\n");
-        prompt.append("      \"correctAnswer\": \"<correct answer>\",\n");
-        prompt.append("      \"points\": <integer>,\n");
-        prompt.append("      \"explanation\": \"<why this is correct>\"\n");
-        prompt.append("    }\n");
-        prompt.append("  ]\n");
-        prompt.append("}\n\n");
-        prompt.append("Make questions clear, relevant, and appropriate for the difficulty level.");
+                    Type: {type}
 
-        return prompt.toString();
+                    {context_section}
+
+                    Provide response in JSON:
+                    {lb}
+                        "questions": [
+                            {lb}
+                                "question": "...",
+                                "type": "multiple-choice|short-answer",
+                                "options": ["..."],
+                                "correctAnswer": "...",
+                                "points": 10,
+                                "explanation": "..."
+                            {rb}
+                        ]
+                    {rb}
+                    """;
+
+            String context = request.getContext();
+            String topicOrResource = (context != null && !context.isEmpty())
+                    ? "the provided RESOURCE CONTENT"
+                    : "\"" + (request.getTopic() != null ? request.getTopic() : "general knowledge") + "\"";
+
+            String contextSection = (context != null && !context.isEmpty())
+                    ? "RESOURCE CONTENT:\n\"\"\"\n" + context + "\n\"\"\""
+                    : "";
+
+            PromptTemplate template = new PromptTemplate(promptText);
+            Prompt prompt = template.create(Map.of(
+                    "count", request.getNumberOfQuestions() != null ? request.getNumberOfQuestions() : 5,
+                    "difficulty", request.getDifficulty() != null ? request.getDifficulty() : "medium",
+                    "topic_or_resource", topicOrResource,
+                    "context_section", contextSection,
+                    "type", request.getQuestionType() != null ? request.getQuestionType() : "mixed",
+                    "lb", "{",
+                    "rb", "}"));
+
+            String jsonResponse = chatModel.call(prompt).getResult().getOutput().getText();
+
+            return parseQuestionResponse(jsonResponse);
+        } catch (Exception e) {
+            e.printStackTrace();
+            QuestionGenerationResponse errorResponse = new QuestionGenerationResponse();
+            errorResponse.setQuestions(new ArrayList<>());
+            return errorResponse;
+        }
     }
 
     private QuestionGenerationResponse parseQuestionResponse(String response) {
@@ -64,6 +89,11 @@ public class QuestionGenerationService {
             String jsonPart = extractJsonFromResponse(response);
 
             // Parse questions using regex (in production, use proper JSON parser)
+            // Look for blocks starting with { and containing "question"
+            // This is a naive regex parser for demonstration.
+            // A library like Jackson would be much better here.
+
+            // Temporary simple parsing logic:
             Pattern questionPattern = Pattern.compile("\\{[^}]*\"question\"\\s*:\\s*\"([^\"]+)\"[^}]*\\}",
                     Pattern.DOTALL);
             Matcher questionMatcher = questionPattern.matcher(jsonPart);

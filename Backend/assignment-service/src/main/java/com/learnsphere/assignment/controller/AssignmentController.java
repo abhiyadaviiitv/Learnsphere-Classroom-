@@ -24,7 +24,7 @@ import com.learnsphere.assignment.service.FileStorageService;
 @RestController
 @RequestMapping("/api/assignments")
 public class AssignmentController {
- 
+
     @Autowired
     private AssignmentService assignmentService;
 
@@ -39,7 +39,7 @@ public class AssignmentController {
     @GetMapping("/{classId}")
     public ResponseEntity<List<Assignment>> getAssignmentsByClassId(@PathVariable String classId) {
         List<Assignment> assignments = assignmentService.getAssignmentListByclassId(classId).orElse(List.of());
-        
+
         if (assignments.isEmpty()) {
             return ResponseEntity.noContent().build();
         } else {
@@ -50,25 +50,70 @@ public class AssignmentController {
     @GetMapping("/details/{assignmentid}")
     public ResponseEntity<Assignment> findassignmentbyassignmentid(@PathVariable String assignmentid) {
         Assignment assignment = assignmentService.getAssignmentById(assignmentid);
-        
+
         if (assignment == null || assignment.getId() == null) {
             return ResponseEntity.noContent().build();
         } else {
             return ResponseEntity.ok(assignment);
         }
     }
-    
+
+    @Autowired
+    private com.learnsphere.assignment.client.AiServiceClient aiServiceClient;
+
     @PostMapping(value = "/{classid}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Assignment createAssignment(
             @RequestPart("formData") Assignmentdto assignmentDTO,
             @RequestPart("attachments") List<MultipartFile> files,
             @PathVariable String classid) {
-        
+
         List<Attachment> attachments = fileStorageService.storeFiles(files);
         Assignment assignment = AssignmentMapper.toEntity(assignmentDTO, classid);
         assignment.setAttachments(attachments);
 
-        return assignmentService.createAssignment(assignment);
+        Assignment savedAssignment = assignmentService.createAssignment(assignment);
+
+        // Trigger AI Ingestion Asynchronously
+        triggerAiIngestion(savedAssignment, attachments, classid);
+
+        return savedAssignment;
+    }
+
+    private void triggerAiIngestion(Assignment assignment, List<Attachment> attachments, String classId) {
+        new Thread(() -> {
+            try {
+                com.learnsphere.assignment.dto.DataIngestionRequest request = new com.learnsphere.assignment.dto.DataIngestionRequest();
+                request.setClassId(classId);
+
+                StringBuilder textContent = new StringBuilder();
+                textContent.append("Assignment Title: ").append(assignment.getTitle()).append("\n");
+                if (assignment.getDescription() != null) {
+                    textContent.append("Description: ").append(assignment.getDescription()).append("\n");
+                }
+                if (assignment.getInstructions() != null) {
+                    textContent.append("Instructions: ").append(assignment.getInstructions()).append("\n");
+                }
+                if (assignment.getQuestions() != null) {
+                    textContent.append("Questions:\n");
+                    assignment.getQuestions().forEach(q -> textContent.append("- ").append(q.getText()).append("\n"));
+                }
+                request.setTextContent(textContent.toString());
+
+                if (attachments != null && !attachments.isEmpty()) {
+                    List<String> pdfUrls = attachments.stream()
+                            .map(Attachment::getFileUrl)
+                            .filter(url -> url != null && url.toLowerCase().endsWith(".pdf"))
+                            .toList();
+                    request.setPdfUrls(pdfUrls);
+                }
+
+                aiServiceClient.ingestData(request);
+            } catch (Exception e) {
+                // Log error but don't fail the assignment creation
+                System.err.println("Failed to trigger AI ingestion for assignment: " + assignment.getId() + ". Error: "
+                        + e.getMessage());
+            }
+        }).start();
     }
 
     @DeleteMapping("/{classid}")
@@ -77,6 +122,3 @@ public class AssignmentController {
         return ResponseEntity.noContent().build();
     }
 }
-
-
-
